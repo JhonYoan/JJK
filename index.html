@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Jujutsu Kaisen: Cursed Arena</title>
+<style>
+:root{--ink:#eaf1ff;--panel:#10182beF;--line:#435477;--violet:#a77aff;--red:#ff5b68;--cyan:#66d9ef}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080d18;color:var(--ink);font-family:system-ui,Segoe UI,sans-serif}
+#game{display:block;width:100vw;height:100vh;image-rendering:pixelated;touch-action:none}
+#hud{position:fixed;inset:0;pointer-events:none}
+.panel{background:linear-gradient(145deg,#111b31ed,#080e1ddf);border:1px solid #52678d;border-radius:9px;box-shadow:0 4px 20px #0008;padding:9px 12px}
+#playerPanel{position:absolute;left:14px;top:12px;width:min(310px,47vw)}
+.name{font-weight:900;letter-spacing:1px;font-size:14px}.sub{font-size:10px;color:#aebbd4;letter-spacing:1px}
+.bar{height:9px;background:#28334a;border:1px solid #53617b;border-radius:5px;overflow:hidden;margin:4px 0}
+.fill{height:100%;width:100%;transition:width .12s}.hp{background:linear-gradient(90deg,#a92743,#ff6674)}.energy{background:linear-gradient(90deg,#4a43bb,#b17cff)}.xp{background:linear-gradient(90deg,#168d75,#69e5b4)}.res{background:linear-gradient(90deg,#a04bd1,#f2a3ff)}
+#stats{display:flex;justify-content:space-between;font-size:10px;color:#d7e0f4}
+#objective{position:absolute;right:14px;top:12px;max-width:260px;font-size:11px;line-height:1.5}
+#objective b{color:#d5b4ff}
+#bossPanel{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:min(440px,60vw);display:none;text-align:center}
+#bossPanel .bar{height:13px}
+#skills{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);display:flex;gap:7px;pointer-events:auto}
+.skill{width:64px;height:58px;border:1px solid #66789c;border-radius:8px;background:#111b31eF;color:white;text-align:center;position:relative;padding:4px;font-size:10px;cursor:pointer;user-select:none}
+.skill strong{display:block;font-size:17px;line-height:22px;color:#d6b4ff}.skill small{font-size:9px;color:#aebbd4}.skill.cool{opacity:.48}
+#hint{position:absolute;bottom:88px;left:50%;transform:translateX(-50%);font-size:11px;color:#dce7ff;text-shadow:0 2px 4px black;white-space:nowrap}
+#toast{position:absolute;top:24%;left:50%;transform:translate(-50%,-50%);background:#0c1425eF;border:1px solid #a78bfa;border-radius:8px;padding:10px 16px;font-weight:700;opacity:0;transition:opacity .2s;text-align:center}
+#menu{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse,#20294bdb,#050914f5);z-index:5}
+#menu .box{width:min(560px,92vw);padding:26px;text-align:center;border:1px solid #7184ac;border-radius:14px;background:#0d1528f2;box-shadow:0 15px 70px #000b}
+h1{margin:0;color:#f3edff;font-size:clamp(23px,5vw,38px);letter-spacing:2px}#menu p{color:#bac8e3;font-size:13px;line-height:1.55}
+button{background:#6848bd;color:white;border:1px solid #b79aff;border-radius:8px;padding:11px 19px;font-weight:800;cursor:pointer}button:hover{filter:brightness(1.2)}
+#mobile{display:none;pointer-events:none;position:absolute;inset:0}
+#stick{position:absolute;bottom:22px;left:20px;width:120px;height:120px;border-radius:50%;background:#9eb3d32b;border:1px solid #c6d6f466;pointer-events:auto;touch-action:none}
+#nub{position:absolute;left:35px;top:35px;width:50px;height:50px;border-radius:50%;background:#b9c8e877;border:1px solid #e0eaff}
+#touchBtns{position:absolute;right:12px;bottom:18px;display:grid;grid-template-columns:repeat(3,54px);gap:6px;pointer-events:auto}
+.tbtn{height:48px;border-radius:50%;background:#34235fdb;border:1px solid #b89bff;color:white;font-weight:900;touch-action:none}
+@media(pointer:coarse){#mobile{display:block}#skills{display:none}#hint{bottom:150px}#objective{top:105px;right:8px;width:145px;font-size:9px}#playerPanel{left:8px;top:8px}}
+@media(max-width:600px){#bossPanel{top:8px;left:50%;width:45vw}#bossPanel .name{font-size:10px}}
+</style></head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+ <div id="playerPanel" class="panel"><div class="name">YUJI ITADORI <span class="sub">· HECHICERO</span></div>
+  <div class="bar"><div id="hpFill" class="fill hp"></div></div><div id="stats"><span id="hpText">100 / 100 PV</span><span id="levelText">NV. 1</span></div>
+  <div class="bar"><div id="enFill" class="fill energy"></div></div><div id="stats"><span>ENERGÍA MALDITA</span><span id="enText">100</span></div>
+  <div class="bar"><div id="xpFill" class="fill xp"></div></div><div class="bar"><div id="resFill" class="fill res"></div></div>
+  <div id="stats"><span>EXPERIENCIA</span><span id="resText">RESONANCIA 0%</span></div>
+ </div>
+ <div id="objective" class="panel"><b>OBJETIVO</b><br><span id="objectiveText">Explora la escuela y encuentra el portal al Bosque Maldito.</span><br><span id="zoneText">ZONA: ESCUELA DE TOKIO</span></div>
+ <div id="bossPanel" class="panel"><div class="name">JOGO · MALDICIÓN DE GRADO ESPECIAL</div><div class="bar"><div id="bossFill" class="fill hp"></div></div><div id="bossHp" class="sub">100%</div></div>
+ <div id="skills">
+  <div class="skill" data-skill="attack"><strong>J</strong>PUÑOS<small>Combo</small></div>
+  <div class="skill" data-skill="q"><strong>Q</strong>DIVERGENTE<small id="cdq">Lista</small></div>
+  <div class="skill" data-skill="e"><strong>E</strong>DESTELLO<small id="cde">Lista</small></div>
+  <div class="skill" data-skill="r"><strong>R</strong>VOTO<small id="cdr">Lista</small></div>
+  <div class="skill" data-skill="f"><strong>F</strong>FURIA<small id="cdf">0%</small></div>
+  <div class="skill" data-skill="dash"><strong>␣</strong>DASH<small>Esquiva</small></div>
+ </div>
+ <div id="hint">WASD mover · Ratón apuntar · J atacar · Q/E/R habilidades · F definitiva · ESPACIO dash</div>
+ <div id="toast"></div>
+ <div id="mobile"><div id="stick"><div id="nub"></div></div><div id="touchBtns">
+  <button class="tbtn" data-act="attack">J</button><button class="tbtn" data-act="q">Q</button><button class="tbtn" data-act="e">E</button>
+  <button class="tbtn" data-act="dash">↯</button><button class="tbtn" data-act="r">R</button><button class="tbtn" data-act="f">F</button>
+ </div></div>
+</div>
+<div id="menu"><div class="box"><h1>JUJUTSU KAISEN</h1><div style="color:#b89bff;font-weight:900;letter-spacing:4px;margin:4px 0 14px">CURSED ARENA</div><p>Una aventura de acción en tiempo real. Explora la escuela, cruza al Bosque Maldito, derrota maldiciones y enfréntate a Jogo.</p><p><b>Controles:</b> WASD · ratón · J · Q · E · R · F · Espacio<br>En móvil: joystick y botones táctiles.</p><button id="start">COMENZAR PARTIDA</button><p style="font-size:10px">Versión jugable inicial · progreso guardado localmente</p></div></div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=W*DPR;canvas.height=H*DPR;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0)}
+addEventListener('resize',resize);resize();
+const WORLD={w:2600,h:1900}, SCHOOL={x:0,y:0,w:1200,h:1000}, FOREST={x:1200,y:0,w:1400,h:1900};
+const keys={},mouse={x:W/2,y:H/2},touch={x:0,y:0,active:false};
+let state='menu',zone='school',last=0,cam={x:0,y:0,shake:0},time=0,toastTimer=0;
+let player={x:580,y:540,r:13,hp:100,maxHp:100,en:100,xp:0,level:1,res:0,faceX:1,faceY:0,speed:190,dash:0,dashCd:0,attackCd:0,combo:0,comboT:0,inv:0,buff:0,dead:false};
+let enemies=[],projectiles=[],effects=[],drops=[],obstacles=[],boss=null,spawnT=0,kills=0,gateOpen=false,won=false;
+const saved=(()=>{try{return JSON.parse(localStorage.getItem('cursedArenaSave')||'{}')}catch(e){return {}}})();
+if(saved.level){player.level=saved.level;player.xp=saved.xp||0;player.res=saved.res||0;player.hp=player.maxHp}
+function save(){try{localStorage.setItem('cursedArenaSave',JSON.stringify({level:player.level,xp:player.xp,res:player.res,kills,gateOpen,won}))}catch(e){}}
+function say(s){const el=document.getElementById('toast');el.textContent=s;el.style.opacity=1;toastTimer=2.1}
+function rand(a,b){return a+Math.random()*(b-a)}function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y)}
+function addEffect(x,y,type,dur=0.4,rad=30,color='#b88cff'){effects.push({x,y,type,t:dur,max:dur,rad,color})}
+function buildWorld(){
+ obstacles=[];
+ // school buildings, garden walls and trees
+ obstacles.push({x:250,y:160,w:380,h:170,type:'building'},{x:760,y:150,w:230,h:180,type:'building'},{x:100,y:760,w:950,h:28,type:'wall'});
+ for(let i=0;i<22;i++){let x=rand(60,1120),y=rand(80,930);if(x>470&&x<700&&y>430&&y<670)continue;obstacles.push({x,y,w:rand(22,35),h:rand(22,35),type:'tree'})}
+ // forest border and trees, clear central trail
+ for(let i=0;i<125;i++){let x=rand(1280,2550),y=rand(70,1830);if(x>1450&&x<2050&&y>650&&y<1250)continue;if(x>2150&&y>1300)continue;obstacles.push({x,y,w:rand(24,46),h:rand(24,48),type:Math.random()<.82?'tree':'rock'})}
+ obstacles.push({x:1300,y:0,w:18,h:680,type:'wall'},{x:1300,y:1230,w:18,h:670,type:'wall'});
+}
+buildWorld();
+function solidAt(x,y,r=12){return obstacles.some(o=>x+r>o.x&&x-r<o.x+o.w&&y+r>o.y&&y-r<o.y+o.h)}
+function moveEntity(ent,dx,dy){let nx=clamp(ent.x+dx,ent.r,WORLD.w-ent.r),ny=clamp(ent.y+dy,ent.r,WORLD.h-ent.r);if(!solidAt(nx,ent.y,ent.r))ent.x=nx;if(!solidAt(ent.x,ny,ent.r))ent.y=ny}
+function nearestEnemy(x,y,range=900){let best=null,bd=range;for(const e of enemies){if(e.hp<=0)continue;let d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;best=e}}if(boss&&boss.hp>0){let d=Math.hypot(boss.x-x,boss.y-y);if(d<bd){bd=d;best=boss}}return best}
+function aim(){let wx=mouse.x+cam.x,wy=mouse.y+cam.y,dx=wx-player.x,dy=wy-player.y,l=Math.hypot(dx,dy)||1;return {x:dx/l,y:dy/l}}
+function hurtPlayer(dmg){if(player.inv>0||player.dead)return;player.hp-=dmg;player.inv=.55;cam.shake=8;addEffect(player.x,player.y,'hit',.25,24,'#ff596a');if(player.hp<=0){player.hp=0;player.dead=true;state='dead';say('Yuji ha sido derrotado. Pulsa R para volver a la escuela.')} }
+function damageEnemy(e,dmg,color='#fff'){if(!e||e.hp<=0)return;e.hp-=dmg;e.flash=.12;addEffect(e.x,e.y,'hit',.18,18,color);effects.push({x:e.x+rand(-8,8),y:e.y-18,t:.7,max:.7,type:'text',text:'-'+Math.round(dmg),color});player.res=clamp(player.res+dmg*.16,0,100);if(e.hp<=0){if(e===boss){boss.dead=true;won=true;gateOpen=true;player.xp+=180;player.res=100;say('¡JOGO DERROTADO! La barrera de Shibuya se ha debilitado.');document.getElementById('objectiveText').textContent='Jogo derrotado. La siguiente región queda marcada para una futura expansión.';save()}else{kills++;player.xp+=12+Math.floor(Math.random()*8);drops.push({x:e.x,y:e.y,type:Math.random()<.25?'heal':'xp',t:18});addEffect(e.x,e.y,'burst',.4,35,'#9c70ff');}}}
+function spawnEnemy(type,x,y){const specs={crawler:{hp:34,speed:92,dmg:8,r:12,xp:15,color:'#8a68a8'},brute:{hp:90,speed:48,dmg:15,r:18,xp:28,color:'#a04e70'},ranged:{hp:46,speed:55,dmg:7,r:13,xp:20,color:'#5b91a8'}};let s=specs[type];enemies.push({type,x,y,r:s.r,hp:s.hp,maxHp:s.hp,speed:s.speed,dmg:s.dmg,xp:s.xp,color:s.color,attack:rand(.5,1.5),flash:0,phase:rand(0,6),stun:0})}
+function spawnWave(){let types=['crawler','crawler','brute','ranged'];for(let i=0;i<3+(player.level>2?2:0);i++){let a=rand(0,Math.PI*2),r=rand(340,570),x=clamp(player.x+Math.cos(a)*r,1380,2540),y=clamp(player.y+Math.sin(a)*r,60,1830);if(!solidAt(x,y,18))spawnEnemy(types[Math.floor(Math.random()*types.length)],x,y)}}
+function spawnBoss(){if(boss)return;boss={x:2310,y:1510,r:34,hp:1100,maxHp:1100,speed:62,phase:1,attack:2,cast:0,mode:'chase',flash:0,dead:false};document.getElementById('bossPanel').style.display='block';say('JOGO: ¡Tu energía maldita termina aquí!')}
+function attackBasic(){if(player.attackCd>0||player.dead)return;let a=aim();player.faceX=a.x;player.faceY=a.y;player.attackCd=.27;player.combo=(player.combo%4)+1;player.comboT=.7;let range=58+player.combo*3;let hit=false;for(let e of [...enemies,boss].filter(Boolean)){if(e.hp<=0)continue;let dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),dot=(dx*a.x+dy*a.y)/(d||1);if(d<range+e.r&&dot>.25){damageEnemy(e,player.combo===4?26:15,player.combo===4?'#ffe28a':'#fff');hit=true;}}addEffect(player.x+a.x*35,player.y+a.y*35,'slash',.2,42,player.combo===4?'#ffd36b':'#e9f4ff');if(hit)player.res=clamp(player.res+5,0,100)}
+function skillQ(){if(player.cdq>0||player.en<18)return;player.cdq=4.5;player.en-=18;let a=aim();let tx=player.x+a.x*88,ty=player.y+a.y*88;addEffect(tx,ty,'diverge',.65,70,'#9f70ff');for(let e of [...enemies,boss].filter(Boolean)){if(e.hp<=0)continue;let dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),dot=(dx*a.x+dy*a.y)/(d||1);if(d<120+e.r&&dot>.25){damageEnemy(e,44,'#bb9aff');setTimeout(()=>{if(e.hp>0)damageEnemy(e,34,'#f2b6ff')},210)}}}
+function skillE(){if(player.cde>0||player.en<25)return;player.cde=8;player.en-=25;let a=aim();player.faceX=a.x;player.faceY=a.y;let hit=false;for(let e of [...enemies,boss].filter(Boolean)){if(e.hp<=0)continue;let dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy),dot=(dx*a.x+dy*a.y)/(d||1);if(d<170+e.r&&dot>.68){damageEnemy(e,105,'#ffcf68');e.stun=.6;hit=true}}addEffect(player.x+a.x*80,player.y+a.y*80,'blackflash',.55,105,'#ff4c6d');cam.shake=hit?12:5;player.res=clamp(player.res+12,0,100)}
+function skillR(){if(player.cdr>0||player.en<20||player.hp<16)return;player.cdr=14;player.en-=20;player.hp-=15;player.buff=5;addEffect(player.x,player.y,'aura',.6,90,'#ff6e88');say('Voto de convergencia · 5 segundos')}
+function skillF(){if(player.res<100)return;player.res=0;player.en=100;let a=aim();addEffect(player.x,player.y,'ultimate',1.1,210,'#ffcf73');cam.shake=18;for(let e of [...enemies,boss].filter(Boolean)){if(e.hp<=0)continue;let d=Math.hypot(e.x-player.x,e.y-player.y);if(d<230){damageEnemy(e,190,'#ffd36b');e.stun=.9}}}
+function dash(){if(player.dashCd>0)return;let dx=(keys.d?1:0)-(keys.a?1:0)+touch.x,dy=(keys.s?1:0)-(keys.w?1:0)+touch.y,l=Math.hypot(dx,dy);if(l<.1){dx=player.faceX;dy=player.faceY;l=1}dx/=l;dy/=l;player.dash=.18;player.dashCd=1.2;player.inv=.25;player.dashX=dx;player.dashY=dy;addEffect(player.x,player.y,'dash',.3,38,'#9b83ff')}
+Object.assign(player,{cdq:0,cde:0,cdr:0});
+function action(a){if(a==='attack')attackBasic();if(a==='q')skillQ();if(a==='e')skillE();if(a==='r')skillR();if(a==='f')skillF();if(a==='dash')dash()}
+addEventListener('keydown',e=>{let k=e.key.toLowerCase();keys[k]=true;if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='j')action('attack');if(k==='q'||k==='e'||k==='r'||k==='f')action(k);if(k===' ')action('dash');if(k==='escape'&&state==='play'){state='pause';say('Pausa · pulsa ESC para continuar')}else if(k==='escape'&&state==='pause')state='play';if(k==='r'&&state==='dead'){player.hp=player.maxHp;player.x=580;player.y=540;player.dead=false;enemies=[];boss=null;zone='school';state='play';say('Recuperado en la escuela.')}});
+addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+canvas.addEventListener('pointermove',e=>{let r=canvas.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top});
+canvas.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button===0)action('attack')});
+document.querySelectorAll('.skill').forEach(el=>el.addEventListener('click',()=>action(el.dataset.skill)));
+document.querySelectorAll('.tbtn').forEach(el=>{el.addEventListener('pointerdown',e=>{e.preventDefault();action(el.dataset.act)})});
+const stick=document.getElementById('stick'),nub=document.getElementById('nub');
+stick.addEventListener('pointerdown',e=>{stick.setPointerCapture(e.pointerId);touch.active=true;moveStick(e)});
+stick.addEventListener('pointermove',e=>{if(touch.active)moveStick(e)});
+stick.addEventListener('pointerup',()=>{touch.active=false;touch.x=touch.y=0;nub.style.left='35px';nub.style.top='35px'});
+stick.addEventListener('pointercancel',()=>{touch.active=false;touch.x=touch.y=0});
+function moveStick(e){let r=stick.getBoundingClientRect(),dx=e.clientX-(r.left+r.width/2),dy=e.clientY-(r.top+r.height/2),l=Math.hypot(dx,dy),m=Math.min(38,l);touch.x=l?dx/l*m/38:0;touch.y=l?dy/l*m/38:0;nub.style.left=(35+touch.x*38)+'px';nub.style.top=(35+touch.y*38)+'px'}
+document.getElementById('start').onclick=()=>{state='play';document.getElementById('menu').style.display='none';say('Encuentra a Gojo para curarte. Luego cruza al bosque.');};
+function update(dt){
+ time+=dt;for(let k of ['cdq','cde','cdr','attackCd','dashCd','inv','buff','comboT'])player[k]=Math.max(0,player[k]-dt);
+ if(player.dead)return;
+ if(state!=='play')return;
+ let dx=(keys.d?1:0)-(keys.a?1:0)+touch.x,dy=(keys.s?1:0)-(keys.w?1:0)+touch.y,l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
+ if(Math.abs(dx)+Math.abs(dy)>.05){player.faceX=dx;player.faceY=dy}
+ let speed=player.speed*(player.buff>0?1.45:1);
+ if(player.dash>0){player.dash-=dt;moveEntity(player,player.dashX*650*dt,player.dashY*650*dt)}else moveEntity(player,dx*speed*dt,dy*speed*dt);
+ // region transition and NPC interaction
+ if(zone==='school'&&player.x>1120&&player.y>680&&player.y<1230){zone='forest';player.x=1370;player.y=950;say('Bosque Maldito · ¡Detecta las maldiciones!');}
+ if(zone==='forest'&&player.x<1335&&player.y>680&&player.y<1230){zone='school';player.x=1110;player.y=950;say('Escuela de Hechicería de Tokio');}
+ if(zone==='school'&&Math.hypot(player.x-680,player.y-530)<75&&keys.f){player.hp=player.maxHp;player.en=100;say('Gojo: recuperación completa.');}
+ if(zone==='school'&&Math.hypot(player.x-680,player.y-530)<90)document.getElementById('objectiveText').textContent='Gojo está aquí: pulsa F para recuperar vida y energía. Busca la abertura al este.';
+ else if(zone==='school')document.getElementById('objectiveText').textContent='Explora la escuela. Cruza la abertura al este para entrar al Bosque Maldito.';
+ if(zone==='forest'){document.getElementById('objectiveText').textContent=boss&&!boss.dead?'Derrota a Jogo en el santuario del sureste.':'Sobrevive, derrota maldiciones y llega al santuario del sureste.';spawnT-=dt;if(spawnT<=0&&enemies.length<16){spawnWave();spawnT=5.2}if(!boss&&player.x>2050&&player.y>1260)spawnBoss();}
+ // enemies
+ for(let e of enemies){if(e.hp<=0)continue;e.flash=Math.max(0,e.flash-dt);e.stun=Math.max(0,e.stun-dt);let d=dist(e,player);e.attack-=dt;if(e.stun<=0){if(e.type==='ranged'){if(d>250){moveEntity(e,(player.x-e.x)/(d||1)*e.speed*dt,(player.y-e.y)/(d||1)*e.speed*dt)}else if(d<170){moveEntity(e,-(player.x-e.x)/(d||1)*e.speed*dt,-(player.y-e.y)/(d||1)*e.speed*dt)}if(e.attack<=0&&d<440){let a=Math.atan2(player.y-e.y,player.x-e.x);projectiles.push({x:e.x,y:e.y,vx:Math.cos(a)*210,vy:Math.sin(a)*210,r:6,dmg:e.dmg,life:2,enemy:true});e.attack=2.1}}else if(d>e.r+player.r+5){moveEntity(e,(player.x-e.x)/(d||1)*e.speed*dt,(player.y-e.y)/(d||1)*e.speed*dt)}else if(e.attack<=0){hurtPlayer(e.dmg);e.attack=1.15}}}
+ if(boss&&!boss.dead){boss.flash=Math.max(0,boss.flash-dt);boss.attack-=dt;boss.cast=Math.max(0,boss.cast-dt);let d=dist(boss,player);if(boss.hp<boss.maxHp*.55)boss.phase=2;if(boss.cast<=0&&boss.attack<=0){boss.mode='telegraph';boss.cast=.72;boss.attack=boss.phase===1?3.2:2.2;let a=Math.atan2(player.y-boss.y,player.x-boss.x);boss.lastA=a;addEffect(player.x,player.y,'warning',.72,65,'#ff4d43');}if(boss.cast>0&&boss.cast<.12){if(boss.mode==='telegraph'){if(boss.phase===1){for(let i=-1;i<=1;i++){let a=boss.lastA+i*.34;projectiles.push({x:boss.x,y:boss.y,vx:Math.cos(a)*280,vy:Math.sin(a)*280,r:12,dmg:16,life:2.4,enemy:true,color:'#ff6b39'})}}else{for(let i=0;i<8;i++){let a=i*Math.PI/4;projectiles.push({x:boss.x,y:boss.y,vx:Math.cos(a)*220,vy:Math.sin(a)*220,r:10,dmg:13,life:2.5,enemy:true,color:'#ff6b39'})}}boss.mode='recover';}}
+ if(d>85)moveEntity(boss,(player.x-boss.x)/(d||1)*boss.speed*(boss.phase===2?1.35:1)*dt,(player.y-boss.y)/(d||1)*boss.speed*(boss.phase===2?1.35:1)*dt);else if(d<boss.r+player.r+9&&boss.attack<1.3)hurtPlayer(19);
+ }
+ // projectiles
+ for(let p of projectiles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;if(p.enemy){if(Math.hypot(p.x-player.x,p.y-player.y)<p.r+player.r){hurtPlayer(p.dmg);p.life=0}}else{for(let e of [...enemies,boss].filter(Boolean)){if(e.hp>0&&Math.hypot(p.x-e.x,p.y-e.y)<p.r+e.r){damageEnemy(e,p.dmg,'#b88cff');p.life=0;break}}}}
+ projectiles=projectiles.filter(p=>p.life>0);
+ for(let d of drops){d.t-=dt;if(Math.hypot(d.x-player.x,d.y-player.y)<35){if(d.type==='heal')player.hp=clamp(player.hp+22,0,player.maxHp);else gainXp(12);d.t=0;addEffect(d.x,d.y,'burst',.3,25,d.type==='heal'?'#68e99b':'#79e9cf')}}drops=drops.filter(d=>d.t>0);
+ for(let ef of effects)ef.t-=dt;effects=effects.filter(e=>e.t>0);
+ if(player.en<100)player.en=Math.min(100,player.en+4*dt);
+ if(player.res>=100)document.getElementById('resText').textContent='RESONANCIA 100% · F LISTA';
+ cam.x+=(clamp(player.x-W/2,0,WORLD.w-W)-cam.x)*Math.min(1,dt*7);cam.y+=(clamp(player.y-H/2,0,WORLD.h-H)-cam.y)*Math.min(1,dt*7);cam.shake=Math.max(0,cam.shake-dt*25);
+ if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)document.getElementById('toast').style.opacity=0}
+ updateHud();
+}
+function gainXp(v){player.xp+=v;let need=player.level*80;if(player.xp>=need){player.xp-=need;player.level++;player.maxHp+=8;player.hp=Math.min(player.maxHp,player.hp+25);player.en=100;say('¡Nivel '+player.level+'! +8 PV máximos');save()}}
+function updateHud(){let pct=(v,m)=>clamp(v/m*100,0,100)+'%';document.getElementById('hpFill').style.width=pct(player.hp,player.maxHp);document.getElementById('enFill').style.width=pct(player.en,100);document.getElementById('xpFill').style.width=pct(player.xp,player.level*80);document.getElementById('resFill').style.width=pct(player.res,100);document.getElementById('hpText').textContent=Math.ceil(player.hp)+' / '+player.maxHp+' PV';document.getElementById('enText').textContent=Math.floor(player.en);document.getElementById('levelText').textContent='NV. '+player.level;document.getElementById('resText').textContent='RESONANCIA '+Math.floor(player.res)+'%';document.getElementById('zoneText').textContent='ZONA: '+(zone==='school'?'ESCUELA DE TOKIO':'BOSQUE MALDITO');for(let [id,v] of [['q',player.cdq],['e',player.cde],['r',player.cdr]]){let el=document.getElementById('cd'+id);if(el)el.textContent=v>0?v.toFixed(1)+'s':'Lista';document.querySelector('[data-skill="'+id+'"]').classList.toggle('cool',v>0)}document.getElementById('cdf').textContent=player.res>=100?'LISTA':Math.floor(player.res)+'%';if(boss&&!boss.dead){document.getElementById('bossPanel').style.display='block';document.getElementById('bossFill').style.width=pct(boss.hp,boss.maxHp);document.getElementById('bossHp').textContent=Math.ceil(boss.hp)+' / '+boss.maxHp+(boss.phase===2?' · FASE 2':' · FASE 1')}}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function drawTree(x,y,s=1){ctx.fillStyle='#0006';ctx.beginPath();ctx.ellipse(x+5,y+13*s,19*s,8*s,0,0,Math.PI*2);ctx.fill();rect(x-5*s,y-4*s,10*s,23*s,'#65452f');ctx.fillStyle='#183d36';ctx.beginPath();ctx.arc(x,y-12*s,21*s,0,Math.PI*2);ctx.fill();ctx.fillStyle='#28604a';ctx.beginPath();ctx.arc(x-7*s,y-20*s,13*s,0,Math.PI*2);ctx.fill();rect(x-9*s,y-26*s,5*s,4*s,'#397b59')}
+function drawPlayer(x,y){let bob=Math.sin(time*12)*1.5*(Math.abs(keys.w)+Math.abs(keys.a)+Math.abs(keys.s)+Math.abs(keys.d)>0?1:0);ctx.save();ctx.translate(Math.round(x),Math.round(y+bob));if(player.inv>0&&Math.floor(time*22)%2===0)ctx.globalAlpha=.45;
+ // shadow
+ ctx.fillStyle='#0008';ctx.beginPath();ctx.ellipse(0,10,14,6,0,0,Math.PI*2);ctx.fill();
+ // legs / shoes
+ rect(-9,2,7,10,'#202a48');rect(2,2,7,10,'#202a48');rect(-10,10,9,4,'#e8e9f0');rect(2,10,9,4,'#e8e9f0');
+ // uniform torso with red hood/collar
+ rect(-11,-12,22,18,'#242d50');rect(-8,-10,16,13,'#33436d');rect(-11,-10,5,8,'#d34a58');rect(6,-10,5,8,'#d34a58');rect(-5,-2,10,5,'#d34a58');
+ // arms
+ rect(-15,-10,5,12,'#e9a77f');rect(10,-10,5,12,'#e9a77f');rect(-15,-11,5,5,'#d34a58');rect(10,-11,5,5,'#d34a58');
+ // neck/head/hair
+ rect(-5,-19,10,7,'#e9ad88');rect(-9,-31,18,15,'#efb994');rect(-10,-32,20,7,'#e58b69');rect(-9,-35,5,6,'#e58b69');rect(-3,-36,6,7,'#e58b69');rect(4,-34,6,6,'#e58b69');
+ // face / eyes
+ rect(-6,-26,3,2,'#30263a');rect(4,-26,3,2,'#30263a');rect(-2,-20,5,2,'#a34e4d');
+ if(player.buff>0){ctx.strokeStyle='#ff6688';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,-7,24+Math.sin(time*20)*3,0,Math.PI*2);ctx.stroke()}
+ ctx.restore()}
+function drawCurse(e){ctx.save();ctx.translate(Math.round(e.x),Math.round(e.y));ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(0,9,e.r*1.2,6,0,0,Math.PI*2);ctx.fill();let c=e.flash>0?'#fff':e.color;
+ if(e.type==='crawler'){rect(-9,-9,18,17,c);rect(-13,-4,5,9,c);rect(8,-4,5,9,c);rect(-6,-15,5,6,'#d7b8ff');rect(3,-15,5,6,'#d7b8ff');rect(-5,-5,3,3,'#ffed9e');rect(3,-5,3,3,'#ffed9e');rect(-5,5,10,3,'#21162e')}
+ else if(e.type==='brute'){rect(-15,-17,30,30,c);rect(-20,-9,8,19,c);rect(12,-9,8,19,c);rect(-11,-23,8,8,'#d78caa');rect(4,-23,8,8,'#d78caa');rect(-9,-8,5,4,'#ffdf8d');rect(5,-8,5,4,'#ffdf8d');rect(-7,5,14,4,'#251324')}
+ else{ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(0,-16);ctx.lineTo(14,0);ctx.lineTo(0,15);ctx.lineTo(-14,0);ctx.closePath();ctx.fill();rect(-7,-5,4,4,'#aefaff');rect(4,-5,4,4,'#aefaff')}
+ if(e.hp<e.maxHp){rect(-16,-e.r-13,32,3,'#211a2c');rect(-16,-e.r-13,32*e.hp/e.maxHp,3,'#ed6576')}ctx.restore()}
+function drawBoss(){if(!boss||boss.dead)return;ctx.save();ctx.translate(boss.x,boss.y);ctx.fillStyle='#0009';ctx.beginPath();ctx.ellipse(0,23,43,15,0,0,Math.PI*2);ctx.fill();let s=1.5;rect(-22,-22,44,48,boss.flash>0?'#fff':'#b94d35');rect(-30,-15,12,28,'#7f302d');rect(18,-15,12,28,'#7f302d');rect(-19,-34,38,17,'#d87548');rect(-23,-39,12,12,'#e59a54');rect(11,-39,12,12,'#e59a54');rect(-14,-26,7,5,'#fff2a6');rect(7,-26,7,5,'#fff2a6');rect(-8,-8,16,7,'#381b24');rect(-8,8,16,5,'#f5a05a');for(let i=0;i<4;i++)rect(-31+i*20,-48-(i%2)*7,8,7,'#f07845');ctx.restore()}
+function drawSchool(){rect(0,0,1200,1000,'#527b55');for(let x=0;x<1200;x+=48)for(let y=0;y<1000;y+=48){rect(x,y,46,46,((x+y)/48)%2?'#5b865c':'#557f57')}
+ // stone paths
+ rect(0,475,1200,120,'#8c8b7a');for(let x=0;x<1200;x+=42)rect(x,480,38,4,'#aaa895');rect(520,330,130,440,'#8c8b7a');
+ // buildings
+ rect(240,150,400,185,'#c7c4ae');rect(230,140,420,22,'#4b3540');rect(260,175,360,135,'#b7b39e');for(let x=275;x<620;x+=65){rect(x,190,38,50,'#39485b');rect(x+4,194,30,42,'#7999a6');rect(x,255,38,42,'#654c47')}
+ rect(750,145,245,190,'#d1cbb5');rect(740,135,265,20,'#4c3541');for(let x=775;x<970;x+=65){rect(x,185,38,62,'#41546a');rect(x+4,189,30,54,'#9bb0b5')}
+ // torii gate
+ rect(1040,420,14,160,'#a6423e');rect(1130,420,14,160,'#a6423e');rect(1025,415,135,13,'#d25a4c');rect(1035,398,115,12,'#d25a4c');
+ // gojo NPC
+ drawGojo(680,530);
+}
+function drawGojo(x,y){ctx.save();ctx.translate(x,y);ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(0,12,17,6,0,0,7);ctx.fill();rect(-10,-13,20,23,'#202b48');rect(-8,-11,16,18,'#e8eaf2');rect(-5,-22,10,10,'#efb993');rect(-11,-34,22,13,'#f1f0e8');rect(-12,-30,24,5,'#e4e4f2');rect(-7,-24,14,4,'#171b2a');rect(-9,-18,18,4,'#f5f5ff');ctx.restore()}
+function drawForest(){rect(1200,0,1400,1900,'#183d32');for(let x=1200;x<2600;x+=48)for(let y=0;y<1900;y+=48)if(((x+y)/48)%3===0)rect(x,y,46,46,'#1c4638'); // trails
+ ctx.fillStyle='#6e624c';ctx.beginPath();ctx.moveTo(1320,880);ctx.lineTo(1900,810);ctx.lineTo(2220,1000);ctx.lineTo(2570,1420);ctx.lineTo(2470,1600);ctx.lineTo(2110,1160);ctx.lineTo(1820,1000);ctx.lineTo(1320,1040);ctx.fill();
+ // sanctuary
+ rect(2220,1380,260,160,'#554d54');rect(2250,1350,200,35,'#b7a18b');rect(2290,1400,120,100,'#302b3b');rect(2310,1420,80,80,'#8d433f');rect(2270,1340,18,45,'#c3b49a');rect(2420,1340,18,45,'#c3b49a');
+ // cursed fissures
+ for(let i=0;i<9;i++){let x=rand(1450,2500),y=rand(200,1750);ctx.strokeStyle='#a45de0';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+rand(-18,18),y+rand(10,30));ctx.lineTo(x+rand(-25,25),y+rand(30,50));ctx.stroke()}
+}
+function drawWorld(){ctx.save();let sx=cam.shake?rand(-cam.shake,cam.shake):0,sy=cam.shake?rand(-cam.shake,cam.shake):0;ctx.translate(-Math.floor(cam.x)+sx,-Math.floor(cam.y)+sy);
+ if(zone==='school')drawSchool();else drawForest();
+ // obstacles behind/front sorting: draw objects after ground, characters depth sorted below
+ for(let o of obstacles){if(o.type==='tree')drawTree(o.x+o.w/2,o.y+o.h/2,clamp(o.w/32,.8,1.5));else if(o.type==='rock'){ctx.fillStyle='#646b68';ctx.beginPath();ctx.ellipse(o.x+o.w/2,o.y+o.h/2,o.w/2,o.h/2,0,0,7);ctx.fill();}}
+ // portals and signage
+ if(zone==='school'){rect(1140,820,22,240,'#d6b0ff');ctx.fillStyle='#d8b4fe';ctx.font='bold 16px sans-serif';ctx.fillText('BOSQUE MALDITO →',980,790);ctx.fillStyle='#fff';ctx.font='12px sans-serif';ctx.fillText('GOJO · PULSA F PARA CURAR',610,490)}
+ else{ctx.fillStyle='#d7a6ff';ctx.font='bold 16px sans-serif';ctx.fillText('← ESCUELA DE TOKIO',1320,790);ctx.fillStyle='#d6b4ff';ctx.fillText('SANTUARIO MALDITO',2220,1320)}
+ // entities depth order
+ let ents=[...enemies.filter(e=>e.hp>0).map(e=>({y:e.y,fn:()=>drawCurse(e)})),{y:player.y,fn:()=>drawPlayer(player.x,player.y)}];if(boss&&!boss.dead)ents.push({y:boss.y,fn:drawBoss});ents.sort((a,b)=>a.y-b.y);for(let e of ents)e.fn();
+ for(let p of projectiles){ctx.fillStyle=p.color||(p.enemy?'#f16b7c':'#b98aff');ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();ctx.fillStyle='#fff8';ctx.beginPath();ctx.arc(p.x-2,p.y-2,p.r/2,0,7);ctx.fill()}
+ for(let d of drops){ctx.fillStyle=d.type==='heal'?'#5de99a':'#65dfce';ctx.shadowBlur=12;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(d.x,d.y,7+Math.sin(time*7)*2,0,7);ctx.fill();ctx.shadowBlur=0}
+ for(let e of effects){let p=1-e.t/e.max;ctx.globalAlpha=1-p;if(e.type==='text'){ctx.fillStyle=e.color;ctx.font='bold 14px monospace';ctx.fillText(e.text,e.x,e.y-p*30)}else{ctx.strokeStyle=e.color;ctx.fillStyle=e.color+'44';ctx.lineWidth=e.type==='blackflash'?5:3;ctx.beginPath();let r=e.rad*(e.type==='slash'?1:Math.max(.1,p));if(e.type==='slash'){ctx.arc(e.x,e.y,r,-.9,.9)}else{ctx.arc(e.x,e.y,r,0,7)}ctx.fill();ctx.stroke();if(e.type==='blackflash'){ctx.strokeStyle='#17111f';ctx.lineWidth=4;for(let i=0;i<5;i++){ctx.beginPath();ctx.moveTo(e.x+rand(-r,r),e.y+rand(-r,r));ctx.lineTo(e.x+rand(-r,r),e.y+rand(-r,r));ctx.stroke()}}}ctx.globalAlpha=1}
+ // minimap
+ ctx.fillStyle='#07111dcc';ctx.fillRect(cam.x+W-142,cam.y+14,128,94);ctx.strokeStyle='#8192b5';ctx.strokeRect(cam.x+W-142,cam.y+14,128,94);ctx.fillStyle='#3b6a4f';ctx.fillRect(cam.x+W-137,cam.y+19,118,84);ctx.fillStyle='#8b78b4';ctx.fillRect(cam.x+W-137+118*1200/WORLD.w,cam.y+19,2,84);ctx.fillStyle='#f8e6a5';ctx.fillRect(cam.x+W-137+player.x/WORLD.w*118-2,cam.y+19+player.y/WORLD.h*84-2,5,5);for(let e of enemies){ctx.fillStyle='#ff6675';ctx.fillRect(cam.x+W-137+e.x/WORLD.w*118-1,cam.y+19+e.y/WORLD.h*84-1,3,3)}if(boss&&!boss.dead){ctx.fillStyle='#ff3c3c';ctx.fillRect(cam.x+W-137+boss.x/WORLD.w*118-2,cam.y+19+boss.y/WORLD.h*84-2,5,5)}
+ ctx.restore()}
+function render(){ctx.clearRect(0,0,W,H);drawWorld();if(state==='pause'||state==='dead'){ctx.fillStyle='#05091699';ctx.fillRect(0,0,W,H);ctx.fillStyle='#fff';ctx.textAlign='center';ctx.font='bold 30px system-ui';ctx.fillText(state==='dead'?'DERROTA':'PAUSA',W/2,H/2);ctx.font='14px system-ui';ctx.fillText(state==='dead'?'Pulsa R para regresar a la escuela':'Pulsa ESC para continuar',W/2,H/2+30);ctx.textAlign='left'}}
+function loop(ts){let dt=Math.min((ts-last)/1000||0,.033);last=ts;update(dt);render();requestAnimationFrame(loop)}
+requestAnimationFrame(loop);
+})();
+</script></body></html>
