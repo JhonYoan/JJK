@@ -1,0 +1,1940 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Jujutsu Kaisen: Cursed Survivor v4.5</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        html, body {
+            width: 100vw;
+            height: 100dvh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            background-color: #020617;
+        }
+        .font-pixel { font-family: 'Press Start 2P', monospace; }
+        .font-vt { font-family: 'VT323', monospace; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            cursor: crosshair;
+        }
+
+        .snes-box {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            border: 3px solid #f8fafc;
+            box-shadow: 0 0 0 3px #0f172a, inset 0 0 0 2px #475569;
+            border-radius: 10px;
+        }
+        .snes-btn {
+            background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+            border: 2px solid #cbd5e1;
+            box-shadow: 0 3px 0 #0f172a;
+            transition: transform 0.08s, background 0.12s;
+        }
+        .snes-btn:active:not(:disabled) {
+            transform: translateY(2px) scale(0.96);
+            box-shadow: 0 1px 0 #0f172a;
+        }
+
+        .touch-pad-btn {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.8), inset 0 2px 5px rgba(255, 255, 255, 0.25);
+            transition: transform 0.06s;
+        }
+        .touch-pad-btn:active {
+            transform: scale(0.9);
+        }
+
+        @keyframes domainPulse {
+            0%, 100% { box-shadow: 0 0 12px #facc15, 0 0 24px #a855f7; transform: scale(1); }
+            50% { box-shadow: 0 0 22px #fde047, 0 0 38px #c084fc; transform: scale(1.07); }
+        }
+        .domain-ready-btn {
+            animation: domainPulse 0.85s infinite;
+            border-color: #fde047 !important;
+            background: radial-gradient(circle, #7e22ce 0%, #3b0764 100%) !important;
+        }
+
+        @keyframes rotatePhone {
+            0%, 100% { transform: rotate(0deg); }
+            45%, 65% { transform: rotate(-90deg); }
+        }
+        .phone-rotate-icon {
+            animation: rotatePhone 2.2s ease-in-out infinite;
+        }
+
+        /* Mandatory Landscape Orientation Lock for Mobile Portrait Screens */
+        #portrait-lock-overlay {
+            display: none;
+        }
+        @media screen and (orientation: portrait) and (max-width: 900px) {
+            #portrait-lock-overlay {
+                display: flex !important;
+            }
+        }
+    </style>
+</head>
+<body class="text-slate-100 font-vt flex flex-col">
+
+    <!-- ========================================================= -->
+    <!-- PORTRAIT ORIENTATION WARNING OVERLAY                      -->
+    <!-- ========================================================= -->
+    <div id="portrait-lock-overlay" class="fixed inset-0 bg-slate-950/98 z-[100] flex-col items-center justify-center p-6 text-center">
+        <div class="snes-box p-6 max-w-sm w-full flex flex-col items-center space-y-5">
+            <div class="phone-rotate-icon w-16 h-28 border-4 border-amber-400 rounded-xl bg-slate-900 flex flex-col justify-between p-2 shadow-lg">
+                <div class="w-4 h-1 bg-slate-500 mx-auto rounded"></div>
+                <div class="font-pixel text-[8px] text-cyan-300">JJK</div>
+                <div class="w-3 h-3 border-2 border-amber-300 rounded-full mx-auto"></div>
+            </div>
+            <h2 class="font-pixel text-xs text-amber-300 leading-relaxed">
+                GIRA TU CELULAR PARA JUGAR EN HORIZONTAL
+            </h2>
+            <p class="text-lg text-slate-300 leading-snug">
+                El modo horizontal ajusta toda la pantalla y te da acceso cómodo al joystick y a los botones de combate.
+            </p>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- COMPACT TOP HUD BAR                                       -->
+    <!-- ========================================================= -->
+    <header id="top-hud" class="hidden bg-slate-950/95 border-b-2 border-slate-700 px-3 py-1 flex justify-between items-center gap-2 z-30 shrink-0" style="padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right));">
+        <div class="flex items-center space-x-2">
+            <div id="hud-avatar" class="w-8 h-8 rounded border-2 border-amber-400 bg-indigo-950 flex items-center justify-center font-pixel text-[9px] text-amber-300 shrink-0">YJ</div>
+            <div>
+                <div class="flex items-center space-x-1.5">
+                    <span id="hud-char-name" class="font-pixel text-[9px] sm:text-[10px] text-white">YUJI ITADORI</span>
+                    <span id="hud-grade" class="bg-amber-500/20 border border-amber-400 text-amber-300 px-1.5 py-0 text-xs sm:text-sm rounded">Grado 4 (0 XP)</span>
+                    <span id="hud-zone" class="hidden lg:inline-block bg-emerald-950 border border-emerald-500 text-emerald-300 px-2 py-0 text-xs rounded">Campus Jujutsu</span>
+                </div>
+                <div class="flex items-center space-x-2 sm:space-x-3 mt-0.5">
+                    <!-- HP -->
+                    <div class="flex items-center space-x-1">
+                        <span class="font-pixel text-[8px] text-emerald-400">PV</span>
+                        <div class="w-20 sm:w-28 h-2.5 bg-slate-900 border border-slate-600 rounded-xs overflow-hidden">
+                            <div id="hud-hp-bar" class="h-full bg-emerald-500 transition-all duration-100" style="width:100%"></div>
+                        </div>
+                        <span id="hud-hp-txt" class="text-xs text-emerald-300">140/140</span>
+                    </div>
+                    <!-- Cursed Energy -->
+                    <div class="flex items-center space-x-1">
+                        <span class="font-pixel text-[8px] text-cyan-400">EM</span>
+                        <div class="w-16 sm:w-24 h-2.5 bg-slate-900 border border-slate-600 rounded-xs overflow-hidden">
+                            <div id="hud-ce-bar" class="h-full bg-cyan-400 transition-all duration-100" style="width:100%"></div>
+                        </div>
+                        <span id="hud-ce-txt" class="text-xs text-cyan-300">100/100</span>
+                    </div>
+                    <!-- Domain Resonance -->
+                    <div class="flex items-center space-x-1">
+                        <span class="font-pixel text-[8px] text-amber-400">DOM</span>
+                        <div class="w-14 sm:w-20 h-2.5 bg-slate-900 border border-slate-600 rounded-xs overflow-hidden">
+                            <div id="hud-dom-bar" class="h-full bg-gradient-to-r from-amber-500 to-purple-500 transition-all duration-100" style="width:0%"></div>
+                        </div>
+                        <span id="hud-dom-txt" class="text-xs text-amber-300">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Header Controls -->
+        <div class="flex items-center space-x-1.5">
+            <button onclick="openRosterModal()" class="snes-btn px-2 py-1 font-pixel text-[8px] text-cyan-300 rounded cursor-pointer">
+                👥 EQUIPO
+            </button>
+            <button onclick="toggleTouchControls()" id="btn-toggle-touch" class="snes-btn px-2 py-1 font-pixel text-[8px] text-emerald-300 rounded cursor-pointer">
+                📱 TÁCTIL: ON
+            </button>
+            <button onclick="toggleGuideModal()" class="snes-btn px-2 py-1 font-pixel text-[8px] text-amber-300 rounded cursor-pointer">
+                📖 GUÍA
+            </button>
+        </div>
+    </header>
+
+    <!-- ========================================================= -->
+    <!-- MAIN VIEWPORT                                             -->
+    <!-- ========================================================= -->
+    <main class="relative flex-1 w-full h-full overflow-hidden bg-slate-950">
+
+        <!-- START SCREEN -->
+        <div id="screen-start" class="absolute inset-0 flex flex-col items-center justify-center p-3 text-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-indigo-950 via-slate-950 to-black z-40">
+            <div class="snes-box p-4 sm:p-6 max-w-2xl w-full space-y-3">
+                <div class="inline-block bg-rose-950 border border-rose-500 text-rose-300 px-3 py-0.5 font-pixel text-[8px] tracking-widest">
+                    VERSIÓN 4.5 • REBALANCEO TÁCTICO Y MÓVIL HORIZONTAL
+                </div>
+                <h1 class="font-pixel text-xl sm:text-3xl text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-rose-500">
+                    JUJUTSU KAISEN: CURSED SURVIVOR
+                </h1>
+                <p class="text-slate-300 text-base sm:text-lg leading-snug">
+                    Combate en tiempo real estilo 16-bits. Sube de Grado cazando maldiciones en el bosque, esquiva los ataques ágiles de <b class="text-orange-400">Jogo (600 PV)</b> y <b class="text-purple-400">Mahito (720 PV)</b>, y libera Shibuya para enfrentar a <b class="text-rose-400">Geto / Kenjaku (950 PV)</b>.
+                </p>
+                <div class="pt-1 flex flex-wrap gap-3 justify-center">
+                    <button onclick="startGame('yuji')" class="snes-btn px-5 py-2.5 font-pixel text-[10px] text-amber-300 rounded cursor-pointer">
+                        ▶ INICIAR AVENTURA
+                    </button>
+                    <button onclick="toggleGuideModal()" class="snes-btn px-4 py-2.5 font-pixel text-[10px] text-slate-200 rounded cursor-pointer">
+                        📖 ESTADÍSTICAS Y JEFES
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAMEPLAY CANVAS -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- BOSS HEALTH BAR OVERLAY -->
+        <div id="boss-hud" class="hidden absolute top-2 left-1/2 -translate-x-1/2 snes-box px-3 py-1 w-72 sm:w-[420px] z-20 pointer-events-none">
+            <div class="flex justify-between items-center mb-0.5">
+                <span id="boss-title" class="font-pixel text-[8px] sm:text-[10px] text-rose-400">JOGO - GRADO ESPECIAL</span>
+                <span id="boss-hp-txt" class="text-xs sm:text-sm text-white">600 / 600</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-950 border border-rose-500 rounded-xs overflow-hidden">
+                <div id="boss-hp-bar" class="h-full bg-gradient-to-r from-rose-600 to-amber-500 transition-all duration-100" style="width:100%"></div>
+            </div>
+            <div id="boss-hint" class="text-xs text-amber-300 text-center mt-0.5">¡VELO ACTIVADO!</div>
+        </div>
+
+        <!-- ZONE & STATUS TOAST -->
+        <div id="toast-banner" class="pointer-events-none absolute top-14 left-1/2 -translate-x-1/2 snes-box px-3 py-1 font-pixel text-[8px] sm:text-[9px] text-amber-300 opacity-0 transition-opacity duration-300 z-20 text-center">
+            CAMPUS JUJUTSU TOKIO
+        </div>
+
+        <!-- PROXIMITY CONTEXTUAL ACTION BUTTON (NO KEYBOARD NEEDED) -->
+        <button id="proximity-btn" onclick="triggerProximityInteraction()" class="hidden absolute bottom-24 left-1/2 -translate-x-1/2 snes-btn border-amber-400 bg-indigo-950 px-4 py-2 font-pixel text-[9px] sm:text-[10px] text-amber-300 rounded-full shadow-2xl z-30 cursor-pointer animate-bounce">
+            💬 HABLAR / INTERACTUAR
+        </button>
+
+        <!-- MINI RADAR (TOP RIGHT) -->
+        <div id="radar-box" class="hidden absolute top-2 right-2 snes-box p-1 z-20 pointer-events-none opacity-90">
+            <canvas id="radarCanvas" width="116" height="82" class="block bg-slate-950"></canvas>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- ERGONOMIC HORIZONTAL TOUCH CONTROLS (SAFE VIEWPORT FIT)   -->
+        <!-- ========================================================= -->
+        <div id="touch-ui-layer" class="hidden pointer-events-none absolute inset-0 z-20">
+            
+            <!-- LEFT SIDE: 360 VIRTUAL JOYSTICK -->
+            <div class="pointer-events-auto absolute" style="left: max(20px, env(safe-area-inset-left)); bottom: max(18px, env(safe-area-inset-bottom));">
+                <div id="joystick-zone" class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-slate-900/65 border-2 border-slate-400/75 flex items-center justify-center shadow-inner">
+                    <div class="w-16 h-16 rounded-full border border-slate-600/50 pointer-events-none"></div>
+                    <div id="joystick-knob" class="absolute w-11 h-11 rounded-full bg-gradient-to-b from-cyan-400 to-indigo-600 border-2 border-white shadow-lg pointer-events-none"></div>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDE: BASIC ATTACK + 4 SKILLS (Q,E,R,F) + DASH ON RIGHT THUMB -->
+            <div class="pointer-events-auto absolute w-52 h-44 sm:w-56 sm:h-48" style="right: max(18px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));">
+                
+                <!-- DASH / SPRINT BUTTON (Moved to Right Thumb Cluster, bottom-left of Basic Attack) -->
+                <button id="btn-dash" class="touch-pad-btn absolute bottom-1 left-2 w-14 h-12 rounded-full bg-emerald-900/90 border-2 border-emerald-400 flex flex-col items-center justify-center text-emerald-200">
+                    <span class="font-pixel text-[7px]">DASH</span>
+                    <span id="lbl-dash" class="text-[11px] leading-none">Listo</span>
+                </button>
+
+                <!-- Skill Q (Left of Basic Attack) -->
+                <button id="btn-q" class="touch-pad-btn absolute bottom-14 left-0 w-13 h-13 w-[52px] h-[52px] rounded-full bg-cyan-950/90 border-2 border-cyan-400 flex flex-col items-center justify-center text-cyan-200">
+                    <span class="font-pixel text-[8px] text-white">[Q]</span>
+                    <span id="lbl-q" class="text-[10px] leading-tight text-center px-0.5">Téc. 1</span>
+                </button>
+
+                <!-- Skill E (Top-Left Arc) -->
+                <button id="btn-e" class="touch-pad-btn absolute top-2 left-8 w-[52px] h-[52px] rounded-full bg-indigo-950/90 border-2 border-indigo-400 flex flex-col items-center justify-center text-indigo-200">
+                    <span class="font-pixel text-[8px] text-white">[E]</span>
+                    <span id="lbl-e" class="text-[10px] leading-tight text-center px-0.5">Téc. 2</span>
+                </button>
+
+                <!-- Skill R (Top-Right Arc) -->
+                <button id="btn-r" class="touch-pad-btn absolute top-0 right-14 w-[52px] h-[52px] rounded-full bg-purple-950/90 border-2 border-purple-400 flex flex-col items-center justify-center text-purple-200">
+                    <span class="font-pixel text-[8px] text-white">[R]</span>
+                    <span id="lbl-r" class="text-[10px] leading-tight text-center px-0.5">Bufo</span>
+                </button>
+
+                <!-- Skill F: Domain Expansion (Far Top-Right) -->
+                <button id="btn-f" class="touch-pad-btn absolute top-6 right-0 w-[52px] h-[52px] rounded-full bg-rose-950/90 border-2 border-rose-500 flex flex-col items-center justify-center text-amber-300">
+                    <span class="font-pixel text-[8px]">[F] DOM</span>
+                    <span id="lbl-f" class="text-[11px] leading-none">0%</span>
+                </button>
+
+                <!-- LARGE CENTRAL BASIC ATTACK BUTTON -->
+                <button id="btn-atk" class="touch-pad-btn absolute bottom-1 right-1 w-20 h-20 rounded-full bg-gradient-to-b from-amber-500 to-rose-600 border-3 border-amber-200 flex flex-col items-center justify-center text-white shadow-2xl">
+                    <span class="text-xl leading-none">👊</span>
+                    <span class="font-pixel text-[8px] mt-1">ATACAR</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- NPC DIALOGUE MODAL WITH CLEAR 'X' CLOSE BUTTON -->
+        <div id="npc-box" class="hidden absolute inset-x-4 bottom-16 sm:inset-x-24 snes-box p-3.5 z-40 flex items-center space-x-3">
+            <canvas id="npcPortrait" width="48" height="48" class="w-12 h-12 bg-slate-900 border-2 border-amber-400 rounded shrink-0"></canvas>
+            <div class="flex-1 pr-6">
+                <div id="npc-name" class="font-pixel text-[10px] text-amber-300 mb-1">SATORU GOJO</div>
+                <p id="npc-text" class="text-base sm:text-lg text-white leading-tight"></p>
+            </div>
+            <button onclick="closeNpcBox()" aria-label="Cerrar diálogo" class="snes-btn w-9 h-9 font-pixel text-xs text-rose-400 border-rose-400 rounded flex items-center justify-center cursor-pointer shrink-0">
+                X
+            </button>
+        </div>
+
+    </main>
+
+    <!-- CHARACTER ROSTER & SWITCHING MODAL WITH 'X' BUTTON -->
+    <div id="roster-modal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-3 z-50">
+        <div class="snes-box max-w-4xl w-full p-4 space-y-3 max-h-[92dvh] overflow-y-auto relative">
+            <div class="flex justify-between items-center border-b-2 border-slate-600 pb-2">
+                <div>
+                    <h3 class="font-pixel text-[10px] sm:text-xs text-amber-300">SELECCIÓN DE HECHICEROS (CAMPUS TOKIO)</h3>
+                    <p class="text-sm sm:text-base text-slate-300">Cambia de personaje dentro de la Escuela según la estrategia del jefe.</p>
+                </div>
+                <button onclick="closeRosterModal()" aria-label="Cerrar equipo" class="snes-btn w-9 h-9 font-pixel text-xs text-rose-400 border-rose-400 rounded flex items-center justify-center cursor-pointer shrink-0">
+                    X
+                </button>
+            </div>
+
+            <div id="roster-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"></div>
+        </div>
+    </div>
+
+    <!-- GUIDE & REBALANCED STATS MODAL WITH 'X' BUTTON -->
+    <div id="guide-modal" class="hidden fixed inset-0 bg-black/85 flex items-center justify-center p-3 z-50">
+        <div class="snes-box max-w-3xl w-full p-4 space-y-3 max-h-[92dvh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b-2 border-slate-600 pb-2">
+                <span class="font-pixel text-[10px] sm:text-xs text-amber-300">SISTEMA DE DAÑO, PROGRESIÓN Y JEFES (v4.5)</span>
+                <button onclick="toggleGuideModal()" aria-label="Cerrar guía" class="snes-btn w-9 h-9 font-pixel text-xs text-rose-400 border-rose-400 rounded flex items-center justify-center cursor-pointer shrink-0">
+                    X
+                </button>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm sm:text-base">
+                <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                    <h4 class="font-pixel text-[8px] text-amber-300 mb-1">GRADOS DE HECHICERO (PROGRESIÓN)</h4>
+                    <p>Gana XP cazando maldiciones: <b>Grado 3</b> (180 XP), <b>Grado 2</b> (450 XP), <b>Grado 1</b> (900 XP - abre Shibuya) y <b>Grado Especial</b> (1600 XP).</p>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                    <h4 class="font-pixel text-[8px] text-orange-400 mb-1">JOGO (600 PV) • BOSQUE NORTE</h4>
+                    <p>Esquiva tus ataques y lanza lava. Cuando canalice <b>Mar de Fuego</b> (pantalla naranja), <b>escóndete tras un árbol o roca</b> para cubrirte.</p>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                    <h4 class="font-pixel text-[8px] text-purple-400 mb-1">MAHITO (720 PV) • BOSQUE SUR</h4>
+                    <p>Muy rápido y letal cuerpo a cuerpo con clones y <b>Cuerpo Poliedro</b>. Usa a <b>Nobara</b> o <b>Megumi</b> a distancia para mantenerlo controlado.</p>
+                </div>
+                <div class="bg-slate-900 p-2.5 rounded border border-slate-700">
+                    <h4 class="font-pixel text-[8px] text-rose-400 mb-1">GETO / KENJAKU (950 PV) • SHIBUYA</h4>
+                    <p>Se desbloquea al vencer a Jogo y Mahito y llegar a Grado 1. Invoca oleadas de maldiciones y dispara vórtices oscuros.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. REBALANCED HEROES DATA (V4.5 NUMBERS & MODERATE BUFFS)
+        // =========================================================================
+        const HEROES = {
+            yuji: {
+                id: 'yuji', name: 'YUJI ITADORI', short: 'YJ', role: 'Tanque / Melee',
+                hair: '#f472b6', outfit: '#1e293b', collar: '#e11d48',
+                maxHp: 140, maxCe: 100, speed: 3.35, atkDmg: 18,
+                qLabel: 'Puño Div.', qCost: 20, qCd: 3.8,
+                eLabel: 'Dest. Negro', eCost: 35, eCd: 7.5,
+                rLabel: 'Voto Ira', rCost: 15, rCd: 11.0,
+                domainName: 'FURIA DESATADA: RELICARIO',
+                desc: '140 PV | Básico: 18. [Q] Puño Divergente (25+20); [E] Destello Negro (65 + escudo 25); [R] -20 PV por +30% vel.'
+            },
+            megumi: {
+                id: 'megumi', name: 'MEGUMI FUSHIGURO', short: 'MF', role: 'Invocador / Táctico',
+                hair: '#0f172a', outfit: '#1e293b', collar: '#64748b',
+                maxHp: 105, maxCe: 120, speed: 3.05, atkDmg: 13,
+                qLabel: 'Perros Div.', qCost: 25, qCd: 7.5,
+                eLabel: 'Conejos', eCost: 30, eCd: 9.5,
+                rLabel: 'Pozo Abismo', rCost: 25, rCd: 8.5,
+                domainName: 'JARDÍN SOMBRÍO DE QUIMERAS',
+                desc: '105 PV | Básico: 13. [Q] Perros Divinos (45 PV, 10 daño/0.85s); [E] Nido Conejos (escudo 35); [R] Ralentiza 50%.'
+            },
+            nobara: {
+                id: 'nobara', name: 'NOBARA KUGISAKI', short: 'NK', role: 'Distancia / Burst',
+                hair: '#c2410c', outfit: '#1e293b', collar: '#9a3412',
+                maxHp: 95, maxCe: 115, speed: 3.15, atkDmg: 12,
+                qLabel: 'Clavo Res.', qCost: 20, qCd: 3.2,
+                eLabel: 'Abanico', eCost: 30, eCd: 6.8,
+                rLabel: 'Sustituto', rCost: 25, rCd: 8.0,
+                domainName: 'RESONANCIA DE ALTA POTENCIA',
+                desc: '95 PV | Básico: 12. [Q] Clavo (16) y detonación (45); [E] 5 clavos (14 c/u); [R] Muñeco señuelo + salto atrás.'
+            },
+            gojo: {
+                id: 'gojo', name: 'SATORU GOJO', short: 'SG', role: 'Grado Especial (Infinito)',
+                hair: '#f8fafc', outfit: '#09090b', collar: '#38bdf8',
+                maxHp: 160, maxCe: 150, speed: 3.6, atkDmg: 24,
+                qLabel: 'Azul', qCost: 25, qCd: 5.0,
+                eLabel: 'Rojo', eCost: 35, eCd: 7.0,
+                rLabel: 'Infinito', rCost: 40, rCd: 12.0,
+                domainName: 'VACÍO PÚRPURA / INCONMENSURABLE',
+                desc: '160 PV | Básico: 24. [Q] Atracción Azul (35); [E] Empuje Rojo (55); [R] Esfera Infinita 2.5s; [F] Vacío Púrpura (180).'
+            }
+        };
+
+        const SORCERER_GRADES = [
+            { name: 'Grado 4', xpReq: 0, hpMult: 1.0, ceMult: 1.0, dmgMult: 1.0 },
+            { name: 'Grado 3', xpReq: 180, hpMult: 1.10, ceMult: 1.08, dmgMult: 1.08 },
+            { name: 'Grado 2', xpReq: 450, hpMult: 1.20, ceMult: 1.15, dmgMult: 1.15 },
+            { name: 'Grado 1', xpReq: 900, hpMult: 1.32, ceMult: 1.25, dmgMult: 1.22 },
+            { name: 'Grado Especial', xpReq: 1600, hpMult: 1.45, ceMult: 1.35, dmgMult: 1.30 }
+        ];
+
+        // =========================================================================
+        // 2. WORLD MAP (2 ZONES: JUJUTSU CAMPUS + CURSED FOREST VS SHIBUYA)
+        // =========================================================================
+        const TILE = 32;
+        const COLS = 54;
+        const ROWS = 38;
+        let mapGrid = [];
+
+        const NPCS = [
+            {
+                id: 'gojo', name: 'SATORU GOJO', x: 8 * TILE, y: 16 * TILE,
+                hair: '#f8fafc', outfit: '#09090b', blindfold: true,
+                prompt: '💬 HABLAR CON GOJO (CURAR)',
+                text: "¡Tus heridas y tu Energía Maldita están restauradas al 100%! Recuerda subir de Grado cazando maldiciones en el bosque antes de enfrentar a Jogo (600 PV) y Mahito (720 PV)."
+            },
+            {
+                id: 'nanami', name: 'KENTO NANAMI', x: 6 * TILE, y: 21 * TILE,
+                hair: '#facc15', outfit: '#d6d3d1', blindfold: false,
+                prompt: '💬 HABLAR CON NANAMI',
+                text: "No subestimes a los jefes: Jogo y Mahito esquivan tus ataques y castigan si te quedas quieto. Cúbrete detrás de los árboles cuando Jogo invoque su Mar de Fuego."
+            },
+            {
+                id: 'switch_station', name: 'PEDESTAL DE EQUIPO', x: 11 * TILE, y: 21 * TILE,
+                hair: '#fde047', outfit: '#334155', blindfold: false, isRosterPoint: true,
+                prompt: '👥 CAMBIAR DE HECHICERO',
+                text: "Seleccionando hechicero..."
+            }
+        ];
+
+        let bossRifts = [];
+
+        function buildWorldMap() {
+            mapGrid = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (r === 0 || c === 0 || r === ROWS - 1 || c === COLS - 1) {
+                        mapGrid[r][c] = 2;
+                        continue;
+                    }
+                    if (c === 15 && r > 3 && r < 34) mapGrid[r][c] = 3; // River
+                    if (c === 35 && r > 2 && r < 35) mapGrid[r][c] = 7; // Shibuya Barrier
+
+                    // Cursed Forest (Cols 16..34) with trees/rocks for tactical cover
+                    if (c >= 17 && c <= 33) {
+                        if ((c * 5 + r * 9) % 13 === 0 && Math.abs(r - 19) > 2) mapGrid[r][c] = 2;
+                        else if ((c * 11 + r * 7) % 19 === 0 && Math.abs(r - 19) > 2) mapGrid[r][c] = 7;
+                    }
+
+                    // Zone 2: Shibuya District (Cols 36..52)
+                    if (c >= 36 && c <= 52) {
+                        mapGrid[r][c] = 6;
+                        if (c % 4 === 0 && r % 5 === 0 && Math.abs(r - 19) > 2) mapGrid[r][c] = 7;
+                    }
+                }
+            }
+
+            // Jujutsu High Safe Courtyard
+            for (let r = 12; r <= 25; r++) {
+                for (let c = 2; c <= 13; c++) mapGrid[r][c] = 4;
+            }
+            for (let r = 11; r <= 13; r++) {
+                for (let c = 5; c <= 10; c++) mapGrid[r][c] = 5;
+            }
+
+            // Roads & Bridges
+            for (let c = 7; c <= 48; c++) {
+                mapGrid[19][c] = (c === 15 || c === 35) ? 8 : 1;
+            }
+            for (let r = 7; r <= 31; r++) {
+                if (mapGrid[r][25] === 0) mapGrid[r][25] = 1;
+            }
+
+            // Buffed Bosses (600 HP Jogo, 720 HP Mahito, 950 HP Geto/Kenjaku)
+            bossRifts = [
+                {
+                    id: 'jogo', name: 'JOGO (ESPÍRITU DEL VOLCÁN)',
+                    x: 25 * TILE, y: 7 * TILE, radius: 250,
+                    hp: 600, speed: 2.1, color: '#ea580c',
+                    defeated: false
+                },
+                {
+                    id: 'mahito', name: 'MAHITO (ALMA MUTANTE)',
+                    x: 25 * TILE, y: 31 * TILE, radius: 250,
+                    hp: 720, speed: 2.45, color: '#7e22ce',
+                    defeated: false
+                },
+                {
+                    id: 'geto', name: 'SUGURU GETO / KENJAKU (SHIBUYA)',
+                    x: 45 * TILE, y: 19 * TILE, radius: 280,
+                    hp: 950, speed: 2.25, color: '#be123c',
+                    defeated: false
+                }
+            ];
+        }
+
+        // =========================================================================
+        // 3. REAL-TIME ENGINE STATE
+        // =========================================================================
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let state = {
+            running: false,
+            paused: false,
+            tick: 0,
+            camX: 0, camY: 0,
+            shake: 0,
+            touchVisible: true,
+            shibuyaUnlocked: false,
+            gojoUnlocked: false,
+            activeBossRift: null,
+            seaOfFireWarning: 0,
+            mouseScreenX: 0, mouseScreenY: 0,
+            usingMouseAim: false,
+            nearbyNpc: null
+        };
+
+        let player = {
+            hero: HEROES.yuji,
+            x: 8 * TILE, y: 19 * TILE, r: 12,
+            aimAngle: 0,
+            hp: 140, maxHp: 140,
+            ce: 100, maxCe: 100,
+            resonance: 0,
+            xp: 0, gradeIdx: 0,
+            // Cooldowns & Active Buffs
+            atkCd: 0, atkSwing: 0,
+            qCd: 0, eCd: 0, rCd: 0, dashCd: 0,
+            dashTimer: 0, dashVx: 0, dashVy: 0,
+            invulnTimer: 0,
+            shieldHp: 0, shieldTimer: 0, shieldColor: '#38bdf8',
+            hasteTimer: 0,
+            domainTimer: 0,
+            markedTarget: null // For Nobara's Resonance Nail detonation
+        };
+
+        let enemies = [];
+        let allies = [];
+        let projectiles = [];
+        let delayedExplosions = [];
+        let darkPools = [];
+        let orbs = [];
+        let particles = [];
+        let popups = [];
+
+        // =========================================================================
+        // 4. VIRTUAL JOYSTICK, RIGHT-SIDE DASH/SKILLS & PROXIMITY INTERACTION
+        // =========================================================================
+        let keys = {};
+        let joy = { active: false, dx: 0, dy: 0, touchId: null };
+
+        const joyZone = document.getElementById('joystick-zone');
+        const joyKnob = document.getElementById('joystick-knob');
+
+        function handleJoyMove(clientX, clientY) {
+            const rect = joyZone.getBoundingClientRect();
+            const cx = rect.left + rect.width / 2;
+            const cy = rect.top + rect.height / 2;
+            const maxDist = rect.width / 2 - 14;
+            let vx = clientX - cx;
+            let vy = clientY - cy;
+            const dist = Math.hypot(vx, vy);
+            if (dist > maxDist) {
+                vx = (vx / dist) * maxDist;
+                vy = (vy / dist) * maxDist;
+            }
+            joyKnob.style.transform = `translate(${vx}px, ${vy}px)`;
+            joy.dx = vx / maxDist;
+            joy.dy = vy / maxDist;
+            if (dist > 5) {
+                state.usingMouseAim = false;
+                player.aimAngle = Math.atan2(joy.dy, joy.dx);
+            }
+        }
+
+        function resetJoy() {
+            joy.active = false;
+            joy.dx = 0;
+            joy.dy = 0;
+            joy.touchId = null;
+            joyKnob.style.transform = `translate(0px, 0px)`;
+        }
+
+        joyZone.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const t = e.changedTouches[0];
+            joy.active = true;
+            joy.touchId = t.identifier;
+            handleJoyMove(t.clientX, t.clientY);
+        }, { passive: false });
+
+        joyZone.addEventListener('touchmove', e => {
+            e.preventDefault();
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === joy.touchId) {
+                    handleJoyMove(e.changedTouches[i].clientX, e.changedTouches[i].clientY);
+                }
+            }
+        }, { passive: false });
+
+        joyZone.addEventListener('touchend', e => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === joy.touchId) resetJoy();
+            }
+        });
+
+        joyZone.addEventListener('mousedown', e => {
+            joy.active = true;
+            handleJoyMove(e.clientX, e.clientY);
+        });
+        window.addEventListener('mousemove', e => {
+            if (joy.active && joy.touchId === null) {
+                handleJoyMove(e.clientX, e.clientY);
+                return;
+            }
+            const rect = canvas.getBoundingClientRect();
+            state.mouseScreenX = e.clientX - rect.left;
+            state.mouseScreenY = e.clientY - rect.top;
+            state.usingMouseAim = true;
+        });
+        window.addEventListener('mouseup', () => {
+            if (joy.active && joy.touchId === null) resetJoy();
+        });
+
+        function bindActionBtn(id, fn) {
+            const el = document.getElementById(id);
+            el.addEventListener('touchstart', e => { e.preventDefault(); fn(); }, { passive: false });
+            el.addEventListener('mousedown', e => { e.stopPropagation(); fn(); });
+        }
+        bindActionBtn('btn-atk', () => doBasicAttack());
+        bindActionBtn('btn-q', () => useSkillQ());
+        bindActionBtn('btn-e', () => useSkillE());
+        bindActionBtn('btn-r', () => useSkillR());
+        bindActionBtn('btn-f', () => useDomainF());
+        bindActionBtn('btn-dash', () => doDash());
+
+        canvas.addEventListener('mousedown', e => {
+            if (!state.running || state.paused) return;
+            if (e.button === 0) doBasicAttack();
+            else if (e.button === 2) useSkillQ();
+        });
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        window.addEventListener('keydown', e => {
+            const k = e.key.toLowerCase();
+            keys[k] = true;
+            if (!state.running || state.paused) return;
+            if (k === 'q') useSkillQ();
+            else if (k === 'e') useSkillE();
+            else if (k === 'r') useSkillR();
+            else if (k === 'f') useDomainF();
+            else if (e.code === 'Space' || k === 'shift') { e.preventDefault(); doDash(); }
+            else if (k === 'z' || k === 'enter') triggerProximityInteraction();
+        });
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+        function getBestAimAngle() {
+            if (state.usingMouseAim) {
+                const wx = state.mouseScreenX + state.camX;
+                const wy = state.mouseScreenY + state.camY;
+                return Math.atan2(wy - player.y, wx - player.x);
+            }
+            let nearest = null;
+            let bestDist = 280;
+            enemies.forEach(en => {
+                if (en.isClone) return;
+                const d = Math.hypot(en.x - player.x, en.y - player.y);
+                if (d < bestDist) { bestDist = d; nearest = en; }
+            });
+            if (nearest && !joy.active) {
+                return Math.atan2(nearest.y - player.y, nearest.x - player.x);
+            }
+            return player.aimAngle;
+        }
+
+        // =========================================================================
+        // 5. COLLISION & COVER PHYSICS
+        // =========================================================================
+        function isTileSolid(c, r) {
+            if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return true;
+            const t = mapGrid[r][c];
+            if (c === 35 && r === 19 && !state.shibuyaUnlocked) return true;
+            return t === 2 || t === 3 || t === 5 || t === 7;
+        }
+
+        function doesTileBlockProjectile(wx, wy) {
+            const c = Math.floor(wx / TILE);
+            const r = Math.floor(wy / TILE);
+            if (c < 0 || r < 0 || c >= COLS || r >= ROWS) return true;
+            const t = mapGrid[r][c];
+            return t === 2 || t === 5 || t === 7;
+        }
+
+        function isPlayerBehindCoverFrom(sourceX, sourceY) {
+            const steps = 14;
+            for (let i = 1; i < steps; i++) {
+                const t = i / steps;
+                const px = sourceX + (player.x - sourceX) * t;
+                const py = sourceY + (player.y - sourceY) * t;
+                if (doesTileBlockProjectile(px, py)) return true;
+            }
+            return false;
+        }
+
+        function moveEntity(ent, dx, dy) {
+            const r = ent.r || 11;
+            const nx = ent.x + dx;
+            if (!isTileSolid(Math.floor((nx - r) / TILE), Math.floor((ent.y - r) / TILE)) &&
+                !isTileSolid(Math.floor((nx + r) / TILE), Math.floor((ent.y - r) / TILE)) &&
+                !isTileSolid(Math.floor((nx - r) / TILE), Math.floor((ent.y + r) / TILE)) &&
+                !isTileSolid(Math.floor((nx + r) / TILE), Math.floor((ent.y + r) / TILE))) {
+                ent.x = nx;
+            }
+            const ny = ent.y + dy;
+            if (!isTileSolid(Math.floor((ent.x - r) / TILE), Math.floor((ny - r) / TILE)) &&
+                !isTileSolid(Math.floor((ent.x + r) / TILE), Math.floor((ny - r) / TILE)) &&
+                !isTileSolid(Math.floor((ent.x - r) / TILE), Math.floor((ny + r) / TILE)) &&
+                !isTileSolid(Math.floor((ent.x + r) / TILE), Math.floor((ny + r) / TILE))) {
+                ent.y = ny;
+            }
+
+            if (state.activeBossRift && (ent === player || ent.isBoss)) {
+                const a = state.activeBossRift;
+                const dist = Math.hypot(ent.x - a.x, ent.y - a.y);
+                if (dist > a.radius - 16) {
+                    const ang = Math.atan2(ent.y - a.y, ent.x - a.x);
+                    ent.x = a.x + Math.cos(ang) * (a.radius - 16);
+                    ent.y = a.y + Math.sin(ang) * (a.radius - 16);
+                }
+            }
+        }
+
+        // =========================================================================
+        // 6. REBALANCED SKILLS, SHIELDS & MULTI-LAYERED ATTACK VISUALS
+        // =========================================================================
+        function grantShield(hpAmount, duration, color) {
+            player.shieldHp = hpAmount;
+            player.shieldTimer = duration;
+            player.shieldColor = color;
+        }
+
+        function getDmgMultiplier() {
+            return SORCERER_GRADES[player.gradeIdx].dmgMult;
+        }
+
+        function doBasicAttack() {
+            if (player.atkCd > 0) return;
+            const h = player.hero;
+            player.atkCd = player.hasteTimer > 0 ? 0.22 : 0.34;
+            player.atkSwing = 0.16;
+            const ang = getBestAimAngle();
+            player.aimAngle = ang;
+
+            const reach = h.id === 'gojo' ? 66 : 54;
+            const dmg = Math.floor(h.atkDmg * getDmgMultiplier());
+
+            enemies.forEach(en => {
+                const d = Math.hypot(en.x - player.x, en.y - player.y);
+                if (d <= reach + en.r) {
+                    let diff = Math.abs(Math.atan2(en.y - player.y, en.x - player.x) - ang);
+                    if (diff > Math.PI) diff = 2 * Math.PI - diff;
+                    if (diff <= 1.3) {
+                        hitEnemy(en, dmg, '#38bdf8');
+                        player.ce = Math.min(player.maxCe, player.ce + (h.id === 'gojo' ? 10 : 7));
+                        player.resonance = Math.min(100, player.resonance + 5);
+                        const kb = en.isBoss ? 4 : 16;
+                        moveEntity(en, Math.cos(ang) * kb, Math.sin(ang) * kb);
+                    }
+                }
+            });
+        }
+
+        function useSkillQ() {
+            const h = player.hero;
+            if (player.qCd > 0 || player.ce < h.qCost) return;
+            player.ce -= h.qCost;
+            player.qCd = h.qCd;
+            const ang = getBestAimAngle();
+            player.aimAngle = ang;
+            const mult = getDmgMultiplier();
+
+            if (h.id === 'yuji') {
+                // Divergent Fist: 25 immediate + 20 delayed
+                const tx = player.x + Math.cos(ang) * 44;
+                const ty = player.y + Math.sin(ang) * 44;
+                spawnParticles(tx, ty, '#22d3ee', 14);
+                enemies.forEach(en => {
+                    if (Math.hypot(en.x - tx, en.y - ty) <= 50 + en.r) {
+                        hitEnemy(en, Math.floor(25 * mult), '#22d3ee');
+                    }
+                });
+                delayedExplosions.push({
+                    fromPlayer: true, x: tx, y: ty, r: 58, timer: 0.65,
+                    dmg: Math.floor(20 * mult), color: '#06b6d4'
+                });
+            } else if (h.id === 'megumi') {
+                // Rebalanced Divine Dogs: 45 HP wolves (bosses can kill them), 10 dmg every 0.85s
+                allies = allies.filter(a => a.type !== 'dog');
+                for (let i = -1; i <= 1; i += 2) {
+                    allies.push({
+                        type: 'dog', x: player.x + i * 16, y: player.y, r: 10,
+                        hp: 45, maxHp: 45, life: 5.5, dmg: Math.floor(10 * mult), atkCd: 0.4,
+                        color: i === -1 ? '#f8fafc' : '#1e293b'
+                    });
+                }
+                addPopup(player.x, player.y - 24, '🐺 PERROS DIVINOS', '#94a3b8');
+            } else if (h.id === 'nobara') {
+                // Resonance Nail: If target already marked, detonate for 45 dmg; else fire nail for 16 dmg
+                if (player.markedTarget && player.markedTarget.hp > 0) {
+                    const t = player.markedTarget;
+                    spawnParticles(t.x, t.y, '#fbbf24', 22);
+                    hitEnemy(t, Math.floor(45 * mult), '#fbbf24');
+                    addPopup(t.x, t.y - 22, '💥 ¡RESONANCIA!', '#fbbf24');
+                    player.markedTarget = null;
+                } else {
+                    projectiles.push({
+                        fromPlayer: true, style: 'nail', marksTarget: true,
+                        x: player.x, y: player.y,
+                        vx: Math.cos(ang) * 9.5, vy: Math.sin(ang) * 9.5,
+                        r: 8, dmg: Math.floor(16 * mult), life: 1.0, color: '#fbbf24', coreColor: '#fef08a'
+                    });
+                }
+            } else if (h.id === 'gojo') {
+                // Lapse Blue: Vortex pull + 35 dmg
+                const tx = player.x + Math.cos(ang) * 125;
+                const ty = player.y + Math.sin(ang) * 125;
+                spawnParticles(tx, ty, '#3b82f6', 24);
+                enemies.forEach(en => {
+                    if (Math.hypot(en.x - tx, en.y - ty) <= 125) {
+                        const pullAng = Math.atan2(ty - en.y, tx - en.x);
+                        moveEntity(en, Math.cos(pullAng) * 38, Math.sin(pullAng) * 38);
+                        hitEnemy(en, Math.floor(35 * mult), '#60a5fa');
+                    }
+                });
+                addPopup(tx, ty - 18, '🔵 TÉCNICA AZUL', '#60a5fa');
+            }
+        }
+
+        function useSkillE() {
+            const h = player.hero;
+            if (player.eCd > 0 || player.ce < h.eCost) return;
+            player.ce -= h.eCost;
+            player.eCd = h.eCd;
+            const ang = getBestAimAngle();
+            player.aimAngle = ang;
+            const mult = getDmgMultiplier();
+
+            if (h.id === 'yuji') {
+                // Black Flash: 65 dmg + 25 HP Focus Shield
+                const tx = player.x + Math.cos(ang) * 50;
+                const ty = player.y + Math.sin(ang) * 50;
+                state.shake = 10;
+                spawnParticles(tx, ty, '#ef4444', 22);
+                spawnParticles(tx, ty, '#09090b', 18);
+                grantShield(25, 3.2, '#f43f5e');
+                player.resonance = Math.min(100, player.resonance + 18);
+                enemies.forEach(en => {
+                    if (Math.hypot(en.x - tx, en.y - ty) <= 62 + en.r) {
+                        hitEnemy(en, Math.floor(65 * mult), '#fde047');
+                        en.stunTimer = 0.65;
+                    }
+                });
+                addPopup(tx, ty - 24, '⚡ ¡DESTELLO NEGRO!', '#fde047');
+            } else if (h.id === 'megumi') {
+                // Rabbit Escape: 35 HP Decoy Shield
+                grantShield(35, 3.5, '#818cf8');
+                for (let i = 0; i < 4; i++) {
+                    const a = (Math.PI * 2 / 4) * i;
+                    allies.push({
+                        type: 'rabbit', x: player.x + Math.cos(a) * 26, y: player.y + Math.sin(a) * 26,
+                        r: 8, hp: 20, life: 3.5, dmg: 0, color: '#f8fafc'
+                    });
+                }
+                addPopup(player.x, player.y - 24, '🐇 ESCUDO DE CONEJOS', '#a5b4fc');
+            } else if (h.id === 'nobara') {
+                // Hairpin: 5 nails fan (14 dmg each)
+                [-0.36, -0.18, 0, 0.18, 0.36].forEach(off => {
+                    const a = ang + off;
+                    projectiles.push({
+                        fromPlayer: true, style: 'nail', explosive: true,
+                        x: player.x, y: player.y,
+                        vx: Math.cos(a) * 8.5, vy: Math.sin(a) * 8.5,
+                        r: 7, dmg: Math.floor(14 * mult), life: 0.85, color: '#f59e0b', coreColor: '#fef3c7'
+                    });
+                });
+                addPopup(player.x, player.y - 22, '📌 ABANICO DE PAJA', '#fbbf24');
+            } else if (h.id === 'gojo') {
+                // Reversal Red: 55 dmg knockback orb
+                projectiles = projectiles.filter(p => p.fromPlayer);
+                projectiles.push({
+                    fromPlayer: true, style: 'orb',
+                    x: player.x, y: player.y,
+                    vx: Math.cos(ang) * 10.5, vy: Math.sin(ang) * 10.5,
+                    r: 15, dmg: Math.floor(55 * mult), life: 0.95, color: '#ef4444', coreColor: '#fecaca', pierce: true
+                });
+                state.shake = 8;
+                addPopup(player.x, player.y - 24, '🔴 TÉCNICA ROJO', '#f87171');
+            }
+        }
+
+        function useSkillR() {
+            const h = player.hero;
+            if (player.rCd > 0 || player.ce < h.rCost) return;
+            player.ce -= h.rCost;
+            player.rCd = h.rCd;
+
+            if (h.id === 'yuji') {
+                // Nerfed Binding Vow: -20 HP for +30% speed for 4.5s
+                if (player.hp > 25) player.hp -= 20;
+                player.hasteTimer = 4.5;
+                grantShield(15, 4.5, '#fb7185');
+                addPopup(player.x, player.y - 26, '🔥 VOTO DE IRA (+30% VEL)', '#fb7185');
+            } else if (h.id === 'megumi') {
+                // Abyssal Well: 50% slow pool
+                darkPools.push({ x: player.x, y: player.y, r: 90, life: 5.0 });
+                addPopup(player.x, player.y - 24, '🌑 POZO DEL ABISMO', '#818cf8');
+            } else if (h.id === 'nobara') {
+                // Straw Doll Decoy (25 HP) + Backstep
+                allies.push({ type: 'doll', x: player.x, y: player.y, r: 12, hp: 25, life: 4.0, color: '#d97706' });
+                moveEntity(player, -Math.cos(player.aimAngle) * 60, -Math.sin(player.aimAngle) * 60);
+                addPopup(player.x, player.y - 24, '🪆 MUÑECO SUSTITUTO', '#fbbf24');
+            } else if (h.id === 'gojo') {
+                // Limitless: 2.5s invulnerability sphere
+                player.invulnTimer = 2.5;
+                grantShield(999, 2.5, '#38bdf8');
+                addPopup(player.x, player.y - 26, '♾️ INFINITO (2.5s)', '#38bdf8');
+            }
+        }
+
+        function useDomainF() {
+            if (player.resonance < 100 || player.domainTimer > 0) return;
+            player.resonance = 0;
+            player.domainTimer = 6.0;
+            grantShield(40, 6.0, '#fde047');
+            state.shake = 12;
+            spawnParticles(player.x, player.y, '#fde047', 35);
+
+            const mult = getDmgMultiplier();
+            if (player.hero.id === 'gojo') {
+                const ang = getBestAimAngle();
+                projectiles.push({
+                    fromPlayer: true, style: 'orb',
+                    x: player.x, y: player.y,
+                    vx: Math.cos(ang) * 11.5, vy: Math.sin(ang) * 11.5,
+                    r: 30, dmg: Math.floor(180 * mult), life: 1.3, color: '#9333ea', coreColor: '#f3e8ff', pierce: true
+                });
+            } else if (player.hero.id === 'nobara') {
+                // High-Output Resonance: 110 direct soul damage to nearest/marked enemy
+                const target = player.markedTarget || enemies[0];
+                if (target) {
+                    hitEnemy(target, Math.floor(110 * mult), '#fde047');
+                    spawnParticles(target.x, target.y, '#f59e0b', 28);
+                }
+            }
+            addPopup(player.x, player.y - 30, `🌌 ${player.hero.domainName}!`, '#fde047');
+        }
+
+        function doDash() {
+            if (player.dashCd > 0 || player.dashTimer > 0) return;
+            player.dashCd = 1.1;
+            player.dashTimer = 0.18;
+            player.invulnTimer = Math.max(player.invulnTimer, 0.28);
+            const ang = (joy.active && (joy.dx !== 0 || joy.dy !== 0)) ? Math.atan2(joy.dy, joy.dx) : player.aimAngle;
+            player.dashVx = Math.cos(ang) * 9.5;
+            player.dashVy = Math.sin(ang) * 9.5;
+            spawnParticles(player.x, player.y, '#34d399', 10);
+        }
+
+        // =========================================================================
+        // 7. AGILE BOSS AI (DODGING, KITING & PUNISHING FACETANKING)
+        // =========================================================================
+        let wildSpawnTimer = 0;
+
+        function spawnMinorCurse() {
+            if (player.x < 15 * TILE && !state.activeBossRift) return;
+            if (enemies.length >= 14) return;
+
+            const ang = Math.random() * Math.PI * 2;
+            const sx = player.x + Math.cos(ang) * 260;
+            const sy = player.y + Math.sin(ang) * 260;
+            if (isTileSolid(Math.floor(sx / TILE), Math.floor(sy / TILE))) return;
+
+            const isGrade3 = (sx > 35 * TILE) || Math.random() < 0.35;
+            enemies.push({
+                isBoss: false,
+                curseType: isGrade3 ? 'grade3' : 'grade4',
+                name: isGrade3 ? 'Maldición Grado 3' : 'Maldición Grado 4',
+                x: sx, y: sy, r: isGrade3 ? 13 : 11,
+                hp: isGrade3 ? 60 : 35, maxHp: isGrade3 ? 60 : 35,
+                speed: isGrade3 ? 1.85 : 1.45,
+                dmg: isGrade3 ? 14 : 8,
+                xpVal: isGrade3 ? 25 : 15,
+                color: isGrade3 ? '#9333ea' : '#65a30d',
+                stunTimer: 0
+            });
+        }
+
+        function activateBossRift(rift) {
+            state.activeBossRift = rift;
+            enemies = enemies.filter(e => Math.hypot(e.x - rift.x, e.y - rift.y) < rift.radius);
+            enemies.push({
+                isBoss: true, rift: rift, bossId: rift.id, name: rift.name,
+                x: rift.x, y: rift.y - 75, r: 22,
+                hp: rift.hp, maxHp: rift.hp, speed: rift.speed,
+                color: rift.color, dmg: 22,
+                atkTimer: 1.5, ultTimer: 7.0, evadeTimer: 2.2,
+                strafeDir: 1, stunTimer: 0, polyhedronTimer: 0
+            });
+
+            document.getElementById('boss-hud').classList.remove('hidden');
+            document.getElementById('boss-title').innerText = rift.name;
+            document.getElementById('boss-hint').innerText =
+                rift.id === 'jogo' ? '⚠️ ¡JOGO ESQUIVA Y QUEMA! Cúbrete tras árboles en Mar de Fuego.' :
+                rift.id === 'mahito' ? '⚠️ ¡MAHITO ES LETAL DE CERCA! Mantén distancia con Nobara/Megumi.' :
+                '⚠️ ¡JEFE FINAL DE SHIBUYA! Controla sus oleadas de maldiciones.';
+            state.shake = 12;
+        }
+
+        function hitEnemy(en, dmg, color) {
+            en.hp -= dmg;
+            spawnParticles(en.x, en.y, color, 7);
+            addPopup(en.x, en.y - 16, `-${dmg}`, color);
+
+            if (en.hp <= 0) {
+                if (en.isClone) return;
+                const xpReward = en.isBoss ? 240 : (en.xpVal || 15);
+                gainSorcererXp(xpReward);
+
+                // Drop green healing orbs occasionally
+                if (Math.random() < 0.35 || en.isBoss) {
+                    orbs.push({
+                        x: en.x + (Math.random() - 0.5) * 24,
+                        y: en.y + (Math.random() - 0.5) * 24,
+                        type: 'heal', val: 22
+                    });
+                }
+
+                player.resonance = Math.min(100, player.resonance + (en.isBoss ? 40 : 7));
+                spawnParticles(en.x, en.y, en.color, en.isBoss ? 36 : 14);
+
+                if (en.isBoss && en.rift) {
+                    en.rift.defeated = true;
+                    state.activeBossRift = null;
+                    state.seaOfFireWarning = 0;
+                    document.getElementById('boss-hud').classList.add('hidden');
+                    addPopup(player.x, player.y - 34, `🏆 ¡${en.name} DERROTADO!`, '#fde047');
+                    checkProgressionUnlocks();
+                }
+            }
+        }
+
+        function gainSorcererXp(amount) {
+            player.xp += amount;
+            let newIdx = 0;
+            for (let i = SORCERER_GRADES.length - 1; i >= 0; i--) {
+                if (player.xp >= SORCERER_GRADES[i].xpReq) {
+                    newIdx = i;
+                    break;
+                }
+            }
+            if (newIdx > player.gradeIdx) {
+                player.gradeIdx = newIdx;
+                const g = SORCERER_GRADES[player.gradeIdx];
+                player.maxHp = Math.floor(player.hero.maxHp * g.hpMult);
+                player.maxCe = Math.floor(player.hero.maxCe * g.ceMult);
+                player.hp = player.maxHp;
+                player.ce = player.maxCe;
+                addPopup(player.x, player.y - 34, `⭐ ¡ASCENSO A ${g.name.toUpperCase()}!`, '#fde047');
+                checkProgressionUnlocks();
+            }
+        }
+
+        function checkProgressionUnlocks() {
+            const jogoDone = bossRifts.find(r => r.id === 'jogo').defeated;
+            const mahitoDone = bossRifts.find(r => r.id === 'mahito').defeated;
+            if (jogoDone && mahitoDone && !state.gojoUnlocked) {
+                state.gojoUnlocked = true;
+                showToast('🔓 ¡SATORU GOJO DESBLOQUEADO EN EL EQUIPO!');
+            }
+            if (jogoDone && mahitoDone && player.gradeIdx >= 3 && !state.shibuyaUnlocked) {
+                state.shibuyaUnlocked = true;
+                showToast('🔓 ¡BARRERA DE SHIBUYA ABIERTA AL ESTE!');
+            }
+        }
+
+        function hurtPlayer(dmg) {
+            if (player.invulnTimer > 0) return;
+            let remaining = dmg;
+            if (player.shieldTimer > 0 && player.shieldHp > 0) {
+                const absorbed = Math.min(player.shieldHp, remaining);
+                player.shieldHp -= absorbed;
+                remaining -= absorbed;
+                if (player.shieldHp <= 0) player.shieldTimer = 0;
+                addPopup(player.x, player.y - 26, `🛡️ -${absorbed}`, player.shieldColor);
+            }
+            if (remaining > 0) {
+                player.hp -= remaining;
+                state.shake = 8;
+                spawnParticles(player.x, player.y, '#ef4444', 12);
+                addPopup(player.x, player.y - 16, `-${remaining}`, '#f43f5e');
+            }
+            player.invulnTimer = 0.65;
+
+            if (player.hp <= 0) {
+                player.hp = player.maxHp;
+                player.ce = player.maxCe;
+                player.x = 8 * TILE;
+                player.y = 19 * TILE;
+                state.activeBossRift = null;
+                state.seaOfFireWarning = 0;
+                enemies = [];
+                projectiles = [];
+                delayedExplosions = [];
+                document.getElementById('boss-hud').classList.add('hidden');
+                showToast('Gojo te rescató a la Escuela. Cambia de hechicero en el pedestal.');
+            }
+        }
+
+        function triggerProximityInteraction() {
+            if (!state.nearbyNpc) return;
+            const npc = state.nearbyNpc;
+            if (npc.isRosterPoint) {
+                openRosterModal();
+                return;
+            }
+            player.hp = player.maxHp;
+            player.ce = player.maxCe;
+            document.getElementById('npc-name').innerText = npc.name;
+            document.getElementById('npc-text').innerText = npc.text;
+            const pCtx = document.getElementById('npcPortrait').getContext('2d');
+            pCtx.clearRect(0, 0, 48, 48);
+            drawHumanoidSprite(pCtx, 24, 30, npc.hair, npc.outfit, '#38bdf8', npc.blindfold);
+            document.getElementById('npc-box').classList.remove('hidden');
+        }
+
+        function closeNpcBox() {
+            document.getElementById('npc-box').classList.add('hidden');
+        }
+
+        // =========================================================================
+        // 8. MAIN UPDATE LOOP
+        // =========================================================================
+        let currentZoneLabel = '';
+
+        function update(dt) {
+            if (!state.running || state.paused) return;
+            state.tick++;
+
+            if (player.atkCd > 0) player.atkCd -= dt;
+            if (player.atkSwing > 0) player.atkSwing -= dt;
+            if (player.qCd > 0) player.qCd -= dt;
+            if (player.eCd > 0) player.eCd -= dt;
+            if (player.rCd > 0) player.rCd -= dt;
+            if (player.dashCd > 0) player.dashCd -= dt;
+            if (player.invulnTimer > 0) player.invulnTimer -= dt;
+            if (player.shieldTimer > 0) player.shieldTimer -= dt;
+            if (player.hasteTimer > 0) player.hasteTimer -= dt;
+            if (state.shake > 0) state.shake = Math.max(0, state.shake - 0.7);
+
+            if (player.domainTimer > 0) {
+                player.domainTimer -= dt;
+                player.ce = Math.min(player.maxCe, player.ce + 18 * dt);
+                if (state.tick % 26 === 0) {
+                    enemies.forEach(en => {
+                        if (Math.hypot(en.x - player.x, en.y - player.y) <= 180) {
+                            hitEnemy(en, Math.floor(20 * getDmgMultiplier()), '#fde047');
+                        }
+                    });
+                }
+            } else {
+                player.ce = Math.min(player.maxCe, player.ce + 4.0 * dt);
+            }
+
+            // Player Movement
+            if (player.dashTimer > 0) {
+                player.dashTimer -= dt;
+                moveEntity(player, player.dashVx, player.dashVy);
+            } else {
+                let mx = joy.dx;
+                let my = joy.dy;
+                if (keys['w'] || keys['arrowup']) my -= 1;
+                if (keys['s'] || keys['arrowdown']) my += 1;
+                if (keys['a'] || keys['arrowleft']) mx -= 1;
+                if (keys['d'] || keys['arrowright']) mx += 1;
+
+                const mag = Math.hypot(mx, my);
+                if (mag > 0.05) {
+                    const spd = player.hero.speed * (player.hasteTimer > 0 ? 1.30 : 1.0);
+                    const norm = mag > 1 ? 1 / mag : 1;
+                    moveEntity(player, mx * norm * spd, my * norm * spd);
+                    if (!state.usingMouseAim) player.aimAngle = Math.atan2(my, mx);
+                }
+            }
+
+            state.camX = Math.max(0, Math.min(COLS * TILE - canvas.width, player.x - canvas.width / 2));
+            state.camY = Math.max(0, Math.min(ROWS * TILE - canvas.height, player.y - canvas.height / 2));
+
+            // Proximity NPC Detection for Touch Button
+            const near = NPCS.find(n => Math.hypot(n.x - player.x, n.y - player.y) < 54);
+            const proxBtn = document.getElementById('proximity-btn');
+            if (near) {
+                state.nearbyNpc = near;
+                proxBtn.innerText = near.prompt;
+                proxBtn.classList.remove('hidden');
+            } else {
+                state.nearbyNpc = null;
+                proxBtn.classList.add('hidden');
+            }
+
+            // Zone Toast
+            let zTxt = 'Campus Jujutsu Tokio (Zona Segura)';
+            if (player.x > 35 * TILE) zTxt = 'Distrito de Shibuya (Zona Final)';
+            else if (player.x > 15 * TILE) zTxt = 'Bosque Maldito (Zona 1)';
+            if (zTxt !== currentZoneLabel) {
+                currentZoneLabel = zTxt;
+                document.getElementById('hud-zone').innerText = zTxt;
+                showToast(zTxt.toUpperCase());
+            }
+
+            // Boss Rift Trigger
+            if (!state.activeBossRift) {
+                bossRifts.forEach(rf => {
+                    if (!rf.defeated && Math.hypot(player.x - rf.x, player.y - rf.y) < 42) {
+                        activateBossRift(rf);
+                    }
+                });
+            }
+
+            wildSpawnTimer += dt;
+            if (wildSpawnTimer >= 2.5) {
+                wildSpawnTimer = 0;
+                spawnMinorCurse();
+            }
+
+            // Update Allies (Divine Dogs can now be damaged by bosses!)
+            allies.forEach(al => {
+                al.life -= dt;
+                if (al.type === 'dog') {
+                    al.atkCd -= dt;
+                    const target = enemies[0];
+                    if (target) {
+                        const a = Math.atan2(target.y - al.y, target.x - al.x);
+                        al.x += Math.cos(a) * 3.8;
+                        al.y += Math.sin(a) * 3.8;
+                        if (Math.hypot(target.x - al.x, target.y - al.y) < 22 && al.atkCd <= 0) {
+                            al.atkCd = 0.85;
+                            hitEnemy(target, al.dmg, '#f8fafc');
+                            if (target.isBoss) al.hp -= 12; // Boss counters the wolf
+                        }
+                    }
+                }
+            });
+            allies = allies.filter(a => a.life > 0 && (a.hp === undefined || a.hp > 0));
+
+            darkPools.forEach(dp => dp.life -= dt);
+            darkPools = darkPools.filter(dp => dp.life > 0);
+
+            // Update Enemies & Agile Bosses
+            enemies.forEach(en => {
+                if (en.stunTimer > 0) { en.stunTimer -= dt; return; }
+
+                const inPool = darkPools.some(dp => Math.hypot(en.x - dp.x, en.y - dp.y) <= dp.r);
+                const slowMult = (inPool ? 0.5 : 1.0) * (player.domainTimer > 0 ? 0.6 : 1.0);
+
+                const decoy = allies.find(a => a.type === 'rabbit' || a.type === 'doll');
+                const targetX = (!en.isBoss && decoy) ? decoy.x : player.x;
+                const targetY = (!en.isBoss && decoy) ? decoy.y : player.y;
+
+                const ang = Math.atan2(targetY - en.y, targetX - en.x);
+                const dist = Math.hypot(targetX - en.x, targetY - en.y);
+
+                if (en.isBoss) {
+                    // AGILE BOSS MOVEMENT: Strafes, dodges incoming projectiles, and retreats if Jogo is crowded!
+                    en.evadeTimer -= dt;
+                    if (en.evadeTimer <= 0) {
+                        en.evadeTimer = 1.9;
+                        en.strafeDir *= -1;
+                        const dodgeAng = ang + (Math.PI / 2) * en.strafeDir;
+                        moveEntity(en, Math.cos(dodgeAng) * 42, Math.sin(dodgeAng) * 42);
+                        spawnParticles(en.x, en.y, en.color, 8);
+                    }
+
+                    const bossRush = en.bossId === 'mahito' && en.polyhedronTimer > 0;
+                    const spd = en.speed * slowMult * (bossRush ? 1.45 : 1.0);
+
+                    if (en.bossId === 'jogo' && dist < 115) {
+                        // Jogo kites backward so you can't just stand on top of him!
+                        moveEntity(en, -Math.cos(ang) * spd * 1.15 + Math.cos(ang + 1.57) * spd * 0.7 * en.strafeDir,
+                                       -Math.sin(ang) * spd * 1.15 + Math.sin(ang + 1.57) * spd * 0.7 * en.strafeDir);
+                    } else if (dist > 85 || bossRush) {
+                        moveEntity(en, Math.cos(ang) * spd + Math.cos(ang + 1.57) * spd * 0.55 * en.strafeDir,
+                                       Math.sin(ang) * spd + Math.sin(ang + 1.57) * spd * 0.55 * en.strafeDir);
+                    }
+                } else {
+                    moveEntity(en, Math.cos(ang) * en.speed * slowMult, Math.sin(ang) * en.speed * slowMult);
+                }
+
+                // Contact Damage (Punishes facetanking Mahito!)
+                if (Math.hypot(player.x - en.x, player.y - en.y) < player.r + en.r) {
+                    if (en.isClone) {
+                        en.hp = 0;
+                        spawnParticles(en.x, en.y, '#a855f7', 12);
+                    } else {
+                        const hitDmg = (en.bossId === 'mahito' && en.polyhedronTimer > 0) ? 40 : en.dmg;
+                        hurtPlayer(hitDmg);
+                    }
+                }
+
+                // Boss Attacks & Ultimates
+                if (en.isBoss) {
+                    en.atkTimer -= dt;
+                    en.ultTimer -= dt;
+                    if (en.polyhedronTimer > 0) en.polyhedronTimer -= dt;
+
+                    if (en.atkTimer <= 0) {
+                        en.atkTimer = 1.85;
+                        if (en.bossId === 'jogo') {
+                            [-0.28, 0, 0.28].forEach(sp => {
+                                projectiles.push({
+                                    fromPlayer: false, style: 'magma', x: en.x, y: en.y,
+                                    vx: Math.cos(ang + sp) * 5.2, vy: Math.sin(ang + sp) * 5.2,
+                                    r: 10, dmg: 22, life: 2.5, color: '#ea580c', coreColor: '#fef08a'
+                                });
+                            });
+                            delayedExplosions.push({
+                                fromPlayer: false, x: player.x, y: player.y, r: 54, timer: 1.2,
+                                dmg: 35, color: '#ea580c'
+                            });
+                        } else if (en.bossId === 'mahito') {
+                            projectiles.push({
+                                fromPlayer: false, style: 'soul', x: en.x, y: en.y,
+                                vx: Math.cos(ang) * 6.5, vy: Math.sin(ang) * 6.5,
+                                r: 10, dmg: 28, life: 2.0, color: '#9333ea', coreColor: '#e9d5ff'
+                            });
+                            if (enemies.length < 5) {
+                                enemies.push({
+                                    isBoss: false, isClone: true, curseType: 'clone', name: 'Clon Mahito',
+                                    x: en.x + 36, y: en.y, r: 13, hp: 18, maxHp: 18,
+                                    speed: 2.4, dmg: 15, color: '#9333ea', stunTimer: 0
+                                });
+                            }
+                        } else if (en.bossId === 'geto') {
+                            [-0.35, -0.12, 0.12, 0.35].forEach(sp => {
+                                projectiles.push({
+                                    fromPlayer: false, style: 'orb', x: en.x, y: en.y,
+                                    vx: Math.cos(ang + sp) * 5.5, vy: Math.sin(ang + sp) * 5.5,
+                                    r: 10, dmg: 24, life: 2.6, color: '#e11d48', coreColor: '#09090b'
+                                });
+                            });
+                        }
+                    }
+
+                    if (en.ultTimer <= 0) {
+                        en.ultTimer = 8.0;
+                        if (en.bossId === 'jogo') {
+                            state.seaOfFireWarning = 2.0;
+                            addPopup(en.x, en.y - 34, '🔥 ¡MAR DE FUEGO! ¡ESCÓNDETE TRAS UN ÁRBOL!', '#fb923c');
+                        } else if (en.bossId === 'mahito') {
+                            en.polyhedronTimer = 3.5;
+                            addPopup(en.x, en.y - 34, '👁️ ¡CUERPO POLIEDRO!', '#e879f9');
+                        } else if (en.bossId === 'geto') {
+                            addPopup(en.x, en.y - 34, '🌀 ¡UZUMAKI / INVOCACIÓN!', '#fb7185');
+                            for (let i = 0; i < 4; i++) {
+                                const a = (Math.PI * 2 / 4) * i;
+                                enemies.push({
+                                    isBoss: false, curseType: i % 2 === 0 ? 'grade3' : 'grade4',
+                                    x: en.x + Math.cos(a) * 50, y: en.y + Math.sin(a) * 50,
+                                    r: 12, hp: 45, maxHp: 45, speed: 1.9, dmg: 14, xpVal: 20, color: '#881337', stunTimer: 0
+                                });
+                            }
+                        }
+                    }
+
+                    document.getElementById('boss-hp-txt').innerText = `${Math.max(0, Math.ceil(en.hp))} / ${en.maxHp}`;
+                    document.getElementById('boss-hp-bar').style.width = `${Math.max(0, (en.hp / en.maxHp) * 100)}%`;
+                }
+            });
+            enemies = enemies.filter(e => e.hp > 0);
+
+            // Jogo Sea of Fire Resolution
+            if (state.seaOfFireWarning > 0) {
+                state.seaOfFireWarning -= dt;
+                if (state.seaOfFireWarning <= 0) {
+                    const jogoBoss = enemies.find(e => e.bossId === 'jogo');
+                    if (jogoBoss) {
+                        state.shake = 16;
+                        spawnParticles(player.x, player.y, '#f97316', 35);
+                        if (isPlayerBehindCoverFrom(jogoBoss.x, jogoBoss.y)) {
+                            addPopup(player.x, player.y - 28, '🌲 ¡CUBIERTO POR EL ÁRBOL!', '#4ade80');
+                        } else {
+                            hurtPlayer(85);
+                        }
+                    }
+                }
+            }
+
+            // Delayed Explosions
+            delayedExplosions.forEach(ex => {
+                ex.timer -= dt;
+                if (ex.timer <= 0) {
+                    spawnParticles(ex.x, ex.y, ex.color, 20);
+                    state.shake = 7;
+                    if (ex.fromPlayer) {
+                        enemies.forEach(en => {
+                            if (Math.hypot(en.x - ex.x, en.y - ex.y) <= ex.r + en.r) hitEnemy(en, ex.dmg, ex.color);
+                        });
+                    } else if (Math.hypot(player.x - ex.x, player.y - ex.y) <= ex.r) {
+                        hurtPlayer(ex.dmg);
+                    }
+                }
+            });
+            delayedExplosions = delayedExplosions.filter(ex => ex.timer > 0);
+
+            // Projectiles & Trail Particles
+            projectiles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= dt;
+                if (state.tick % 2 === 0) {
+                    particles.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 1.2, vy: (Math.random() - 0.5) * 1.2, sz: 3, color: p.color, life: 0.2 });
+                }
+
+                if (doesTileBlockProjectile(p.x, p.y) && !p.pierce) {
+                    p.life = 0;
+                    spawnParticles(p.x, p.y, p.color, 6);
+                    return;
+                }
+
+                if (p.fromPlayer) {
+                    enemies.forEach(en => {
+                        if (Math.hypot(p.x - en.x, p.y - en.y) <= p.r + en.r) {
+                            hitEnemy(en, p.dmg, p.color);
+                            if (p.marksTarget) {
+                                player.markedTarget = en;
+                                addPopup(en.x, en.y - 26, '📌 ¡CLAVADO! (Pulsa Q)', '#fbbf24');
+                            }
+                            if (!p.pierce) p.life = 0;
+                        }
+                    });
+                } else if (Math.hypot(p.x - player.x, p.y - player.y) <= p.r + player.r) {
+                    hurtPlayer(p.dmg);
+                    p.life = 0;
+                }
+            });
+            projectiles = projectiles.filter(p => p.life > 0);
+
+            // Healing Orbs
+            orbs.forEach(o => {
+                const d = Math.hypot(player.x - o.x, player.y - o.y);
+                if (d < 110) {
+                    const a = Math.atan2(player.y - o.y, player.x - o.x);
+                    o.x += Math.cos(a) * 4.5;
+                    o.y += Math.sin(a) * 4.5;
+                }
+                if (d < 18) {
+                    o.collected = true;
+                    player.hp = Math.min(player.maxHp, player.hp + o.val);
+                    addPopup(player.x, player.y - 18, `+${o.val} PV`, '#4ade80');
+                }
+            });
+            orbs = orbs.filter(o => !o.collected);
+
+            particles.forEach(pt => { pt.x += pt.vx; pt.y += pt.vy; pt.life -= dt; });
+            particles = particles.filter(pt => pt.life > 0);
+
+            popups.forEach(pp => { pp.y -= 0.7; pp.life -= dt; });
+            popups = popups.filter(pp => pp.life > 0);
+
+            syncHud();
+        }
+
+        function spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const s = 1 + Math.random() * 4;
+                particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, sz: 3 + Math.random() * 3, color, life: 0.35 + Math.random() * 0.25 });
+            }
+        }
+
+        function addPopup(x, y, text, color) {
+            popups.push({ x, y, text, color, life: 1.0 });
+        }
+
+        function showToast(msg) {
+            const el = document.getElementById('toast-banner');
+            el.innerText = msg;
+            el.style.opacity = '1';
+            setTimeout(() => { el.style.opacity = '0'; }, 2800);
+        }
+
+        // =========================================================================
+        // 9. DETAILED 16-BIT SPRITES & MULTI-LAYERED ATTACK RENDERING
+        // =========================================================================
+        function drawHumanoidSprite(c, x, y, hair, outfit, collar, blindfold) {
+            const px = Math.floor(x - 14);
+            const py = Math.floor(y - 18);
+            c.fillStyle = 'rgba(0,0,0,0.4)';
+            c.beginPath(); c.ellipse(x, y + 10, 10, 4, 0, 0, Math.PI * 2); c.fill();
+
+            c.fillStyle = outfit;
+            c.fillRect(px + 6, py + 12, 16, 14);
+            c.fillStyle = collar;
+            c.fillRect(px + 7, py + 11, 14, 4);
+
+            c.fillStyle = '#fed7aa';
+            c.fillRect(px + 7, py + 2, 14, 10);
+
+            if (blindfold) {
+                c.fillStyle = '#020617';
+                c.fillRect(px + 7, py + 5, 14, 4);
+            } else {
+                c.fillStyle = '#09090b';
+                c.fillRect(px + 9, py + 7, 2, 3);
+                c.fillRect(px + 17, py + 7, 2, 3);
+            }
+
+            c.fillStyle = hair;
+            c.fillRect(px + 6, py, 16, 4);
+            c.fillRect(px + 5, py + 2, 3, 5);
+            c.fillRect(px + 20, py + 2, 3, 5);
+        }
+
+        function drawMinorCurseSprite(c, en) {
+            const bob = Math.sin(state.tick * 0.15 + en.x) * 2;
+            const x = en.x, y = en.y + bob;
+
+            c.fillStyle = 'rgba(0,0,0,0.38)';
+            c.beginPath(); c.ellipse(en.x, en.y + 12, 10, 4, 0, 0, Math.PI * 2); c.fill();
+
+            if (en.curseType === 'grade3') {
+                // Grade 3 Stalker Beast: Horned purple demon with claws & glowing red eyes
+                c.fillStyle = '#581c87';
+                c.beginPath(); c.arc(x, y, 12, 0, Math.PI * 2); c.fill();
+                c.fillStyle = '#3b0764';
+                c.fillRect(x - 10, y - 4, 20, 12);
+                // Horns
+                c.fillStyle = '#e2e8f0';
+                c.fillRect(x - 10, y - 15, 3, 6);
+                c.fillRect(x + 7, y - 15, 3, 6);
+                // Glowing eyes
+                c.fillStyle = '#f43f5e';
+                c.fillRect(x - 6, y - 3, 4, 3);
+                c.fillRect(x + 2, y - 3, 4, 3);
+            } else {
+                // Grade 4 Fly-Head / Floating Cursed Spirit: Winged green/dark orb with cyclops eye & teeth
+                c.fillStyle = '#365314';
+                c.beginPath(); c.arc(x, y, 10, 0, Math.PI * 2); c.fill();
+                // Little wings
+                c.fillStyle = '#a3e635';
+                c.fillRect(x - 15, y - 4, 5, 4);
+                c.fillRect(x + 10, y - 4, 5, 4);
+                // Single yellow eye & jagged mouth
+                c.fillStyle = '#fef08a';
+                c.beginPath(); c.arc(x, y - 3, 4, 0, Math.PI * 2); c.fill();
+                c.fillStyle = '#09090b';
+                c.fillRect(x - 1, y - 4, 2, 2);
+                c.fillStyle = '#f8fafc';
+                c.fillRect(x - 5, y + 4, 10, 2);
+            }
+
+            // Mini HP Bar above curse
+            const pct = Math.max(0, en.hp / en.maxHp);
+            c.fillStyle = '#09090b'; c.fillRect(x - 12, y - 19, 24, 3);
+            c.fillStyle = '#ef4444'; c.fillRect(x - 12, y - 19, 24 * pct, 3);
+        }
+
+        function drawBossSprite(c, en) {
+            const x = en.x, y = en.y;
+            c.fillStyle = 'rgba(0,0,0,0.45)';
+            c.beginPath(); c.ellipse(x, y + 20, 18, 6, 0, 0, Math.PI * 2); c.fill();
+
+            if (en.bossId === 'jogo') {
+                c.fillStyle = '#7c2d12'; c.fillRect(x - 16, y - 8, 32, 26);
+                c.fillStyle = '#ea580c'; c.beginPath(); c.arc(x, y - 12, 14, 0, Math.PI * 2); c.fill();
+                c.fillStyle = '#fde047'; c.fillRect(x - 6, y - 27, 12, 5);
+                c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x, y - 11, 6, 0, Math.PI * 2); c.fill();
+                c.fillStyle = '#09090b'; c.beginPath(); c.arc(x, y - 11, 2.5, 0, Math.PI * 2); c.fill();
+            } else if (en.bossId === 'mahito') {
+                c.fillStyle = en.polyhedronTimer > 0 ? '#4c1d95' : '#1e1b4b';
+                c.fillRect(x - 15, y - 10, 30, 28);
+                c.fillStyle = '#93c5fd'; c.fillRect(x - 16, y - 22, 32, 14);
+                c.fillStyle = '#e2e8f0'; c.fillRect(x - 10, y - 16, 20, 11);
+                c.fillStyle = '#facc15'; c.fillRect(x - 6, y - 12, 3, 3);
+                c.fillStyle = '#38bdf8'; c.fillRect(x + 3, y - 12, 3, 3);
+            } else {
+                c.fillStyle = '#f59e0b'; c.fillRect(x - 17, y - 8, 34, 28);
+                c.fillStyle = '#09090b'; c.fillRect(x - 12, y - 6, 24, 24);
+                c.fillStyle = '#fed7aa'; c.fillRect(x - 9, y - 18, 18, 12);
+                c.fillStyle = '#09090b'; c.fillRect(x - 11, y - 22, 22, 6);
+            }
+        }
+
+        function drawMultiLayeredProjectile(c, p) {
+            // Outer Glow Aura + Bright Inner Core + Directional Shape
+            c.save();
+            c.translate(p.x, p.y);
+            const ang = Math.atan2(p.vy, p.vx);
+            c.rotate(ang);
+
+            if (p.style === 'nail') {
+                // Cursed Aura + Metallic Nail Shaft + Glowing Tip
+                c.fillStyle = p.color + '55';
+                c.fillRect(-12, -5, 24, 10);
+                c.fillStyle = '#cbd5e1';
+                c.fillRect(-10, -2, 18, 4);
+                c.fillStyle = p.coreColor || '#fef08a';
+                c.fillRect(4, -2, 6, 4);
+            } else if (p.style === 'soul') {
+                // Mahito Jagged Soul Blade
+                c.fillStyle = p.color + '66';
+                c.beginPath(); c.moveTo(14, 0); c.lineTo(-10, -9); c.lineTo(-4, 0); c.lineTo(-10, 9); c.closePath(); c.fill();
+                c.fillStyle = p.coreColor || '#f3e8ff';
+                c.beginPath(); c.moveTo(10, 0); c.lineTo(-6, -4); c.lineTo(-6, 4); c.closePath(); c.fill();
+            } else {
+                // Dual-Layered Energy Orb (Outer Aura + Bright Core)
+                c.fillStyle = p.color + '66';
+                c.beginPath(); c.arc(0, 0, p.r + 4, 0, Math.PI * 2); c.fill();
+                c.fillStyle = p.color;
+                c.beginPath(); c.arc(0, 0, p.r, 0, Math.PI * 2); c.fill();
+                c.fillStyle = p.coreColor || '#ffffff';
+                c.beginPath(); c.arc(0, 0, p.r * 0.48, 0, Math.PI * 2); c.fill();
+            }
+            c.restore();
+        }
+
+        function render() {
+            if (!state.running) return;
+            if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+
+            ctx.imageSmoothingEnabled = false;
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.save();
+            const sx = state.shake > 0 ? (Math.random() - 0.5) * state.shake : 0;
+            const sy = state.shake > 0 ? (Math.random() - 0.5) * state.shake : 0;
+            ctx.translate(-Math.floor(state.camX + sx), -Math.floor(state.camY + sy));
+
+            const c0 = Math.max(0, Math.floor(state.camX / TILE));
+            const c1 = Math.min(COLS - 1, c0 + Math.ceil(canvas.width / TILE) + 1);
+            const r0 = Math.max(0, Math.floor(state.camY / TILE));
+            const r1 = Math.min(ROWS - 1, r0 + Math.ceil(canvas.height / TILE) + 1);
+
+            for (let r = r0; r <= r1; r++) {
+                for (let c = c0; c <= c1; c++) {
+                    const t = mapGrid[r][c];
+                    const px = c * TILE, py = r * TILE;
+
+                    if (t === 0 || t === 2) {
+                        ctx.fillStyle = '#15803d'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.fillStyle = '#166534'; ctx.fillRect(px + 6, py + 8, 4, 4);
+                    } else if (t === 1) {
+                        ctx.fillStyle = '#ca8a04'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.fillStyle = '#a16207'; ctx.fillRect(px + 4, py + 4, 10, 10);
+                    } else if (t === 3) {
+                        ctx.fillStyle = '#0369a1'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.fillStyle = '#38bdf8'; ctx.fillRect(px + 6, py + 14, 16, 3);
+                    } else if (t === 4) {
+                        ctx.fillStyle = '#cbd5e1'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.strokeStyle = '#94a3b8'; ctx.strokeRect(px + 1, py + 1, TILE - 2, TILE - 2);
+                    } else if (t === 5) {
+                        ctx.fillStyle = '#7f1d1d'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.fillStyle = '#f59e0b'; ctx.fillRect(px, py + 24, TILE, 8);
+                    } else if (t === 6 || t === 7) {
+                        ctx.fillStyle = '#1e293b'; ctx.fillRect(px, py, TILE, TILE);
+                        ctx.fillStyle = '#ec4899';
+                        if ((c + r) % 7 === 0) ctx.fillRect(px + 12, py + 4, 8, 3);
+                    } else if (t === 8) {
+                        ctx.fillStyle = '#78350f'; ctx.fillRect(px, py, TILE, TILE);
+                    }
+
+                    if (t === 2) {
+                        ctx.fillStyle = '#451a03'; ctx.fillRect(px + 12, py + 18, 8, 12);
+                        ctx.fillStyle = '#052e16'; ctx.beginPath(); ctx.arc(px + 16, py + 13, 14, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#16a34a'; ctx.beginPath(); ctx.arc(px + 14, py + 10, 10, 0, Math.PI * 2); ctx.fill();
+                    } else if (t === 7) {
+                        ctx.fillStyle = '#475569'; ctx.fillRect(px + 3, py + 3, 26, 26);
+                        ctx.fillStyle = '#64748b'; ctx.fillRect(px + 5, py + 5, 22, 10);
+                    }
+                }
+            }
+
+            if (!state.shibuyaUnlocked) {
+                ctx.fillStyle = 'rgba(147, 51, 234, 0.45)';
+                ctx.fillRect(35 * TILE, 3 * TILE, TILE, 32 * TILE);
+            }
+
+            darkPools.forEach(dp => {
+                ctx.fillStyle = 'rgba(15, 23, 42, 0.78)';
+                ctx.beginPath(); ctx.arc(dp.x, dp.y, dp.r, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.stroke();
+            });
+
+            bossRifts.forEach(rf => {
+                if (rf.defeated) return;
+                ctx.fillStyle = 'rgba(126, 34, 206, 0.45)';
+                ctx.beginPath(); ctx.arc(rf.x, rf.y, 26 + Math.sin(state.tick * 0.1) * 4, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#e879f9'; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = '#fde047'; ctx.font = '8px "Press Start 2P"'; ctx.textAlign = 'center';
+                ctx.fillText(rf.id.toUpperCase(), rf.x, rf.y - 32);
+            });
+
+            if (state.activeBossRift) {
+                const a = state.activeBossRift;
+                ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2); ctx.stroke();
+            }
+
+            delayedExplosions.forEach(ex => {
+                ctx.fillStyle = ex.fromPlayer ? 'rgba(34, 211, 238, 0.3)' : 'rgba(239, 68, 68, 0.38)';
+                ctx.beginPath(); ctx.arc(ex.x, ex.y, ex.r, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = ex.color; ctx.lineWidth = 2; ctx.stroke();
+            });
+
+            orbs.forEach(o => {
+                ctx.fillStyle = '#4ade80';
+                ctx.beginPath(); ctx.arc(o.x, o.y, 5, 0, Math.PI * 2); ctx.fill();
+            });
+
+            NPCS.forEach(npc => {
+                drawHumanoidSprite(ctx, npc.x, npc.y, npc.hair, npc.outfit, '#38bdf8', npc.blindfold);
+            });
+
+            allies.forEach(al => {
+                ctx.fillStyle = al.color;
+                ctx.beginPath(); ctx.arc(al.x, al.y, al.r, 0, Math.PI * 2); ctx.fill();
+                if (al.type === 'dog') {
+                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.5; ctx.stroke();
+                }
+            });
+
+            enemies.forEach(en => {
+                if (en.isBoss) drawBossSprite(ctx, en);
+                else drawMinorCurseSprite(ctx, en);
+
+                if (player.markedTarget === en) {
+                    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+                    ctx.strokeRect(en.x - 16, en.y - 24, 32, 36);
+                }
+            });
+
+            if (player.domainTimer > 0) {
+                ctx.fillStyle = 'rgba(250, 204, 21, 0.16)';
+                ctx.beginPath(); ctx.arc(player.x, player.y, 180, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#fde047'; ctx.lineWidth = 3; ctx.stroke();
+            }
+
+            drawHumanoidSprite(ctx, player.x, player.y, player.hero.hair, player.hero.outfit, player.hero.collar, player.hero.id === 'gojo');
+
+            // Active Visual Shield Sphere around Player
+            if (player.shieldTimer > 0) {
+                ctx.fillStyle = player.shieldColor + '33';
+                ctx.beginPath(); ctx.arc(player.x, player.y, 24 + Math.sin(state.tick * 0.2) * 2, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = player.shieldColor;
+                ctx.lineWidth = 2.5;
+                ctx.stroke();
+            }
+
+            // Multi-layered Melee Slash Arc
+            if (player.atkSwing > 0) {
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 6;
+                ctx.beginPath(); ctx.arc(player.x, player.y, 44, player.aimAngle - 1.1, player.aimAngle + 1.1); ctx.stroke();
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(player.x, player.y, 44, player.aimAngle - 0.9, player.aimAngle + 0.9); ctx.stroke();
+            }
+
+            projectiles.forEach(p => drawMultiLayeredProjectile(ctx, p));
+
+            particles.forEach(pt => {
+                ctx.fillStyle = pt.color;
+                ctx.fillRect(pt.x, pt.y, pt.sz, pt.sz);
+            });
+
+            popups.forEach(pp => {
+                ctx.font = '9px "Press Start 2P"'; ctx.textAlign = 'center';
+                ctx.fillStyle = '#000'; ctx.fillText(pp.text, pp.x + 1, pp.y + 1);
+                ctx.fillStyle = pp.color; ctx.fillText(pp.text, pp.x, pp.y);
+            });
+
+            ctx.restore();
+
+            if (state.seaOfFireWarning > 0) {
+                ctx.fillStyle = `rgba(234, 88, 12, ${0.26 + Math.sin(state.tick * 0.4) * 0.15})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            renderMiniRadar();
+        }
+
+        function renderMiniRadar() {
+            const rc = document.getElementById('radarCanvas');
+            const rctx = rc.getContext('2d');
+            const tw = rc.width / COLS, th = rc.height / ROWS;
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const t = mapGrid[r][c];
+                    rctx.fillStyle = t === 4 || t === 5 ? '#cbd5e1' : (t === 6 || t === 7 ? '#334155' : (t === 3 ? '#0284c7' : '#16a34a'));
+                    rctx.fillRect(c * tw, r * th, Math.ceil(tw), Math.ceil(th));
+                }
+            }
+            bossRifts.forEach(rf => {
+                if (!rf.defeated) {
+                    rctx.fillStyle = '#e879f9';
+                    rctx.fillRect((rf.x / TILE) * tw - 2, (rf.y / TILE) * th - 2, 5, 5);
+                }
+            });
+            rctx.fillStyle = '#fde047';
+            rctx.fillRect((player.x / TILE) * tw - 2, (player.y / TILE) * th - 2, 5, 5);
+        }
+
+        // =========================================================================
+        // 10. HUD SYNC & CHARACTER SWITCHING
+        // =========================================================================
+        function syncHud() {
+            document.getElementById('hud-hp-bar').style.width = `${Math.max(0, (player.hp / player.maxHp) * 100)}%`;
+            document.getElementById('hud-hp-txt').innerText = `${Math.max(0, Math.ceil(player.hp))}/${player.maxHp}`;
+            document.getElementById('hud-ce-bar').style.width = `${(player.ce / player.maxCe) * 100}%`;
+            document.getElementById('hud-ce-txt').innerText = `${Math.floor(player.ce)}/${player.maxCe}`;
+            document.getElementById('hud-dom-bar').style.width = `${player.resonance}%`;
+            document.getElementById('hud-dom-txt').innerText = `${Math.floor(player.resonance)}%`;
+
+            const g = SORCERER_GRADES[player.gradeIdx];
+            document.getElementById('hud-grade').innerText = `${g.name} (${player.xp} XP)`;
+
+            document.getElementById('lbl-q').innerText = player.qCd > 0 ? `${player.qCd.toFixed(1)}s` : player.hero.qLabel;
+            document.getElementById('lbl-e').innerText = player.eCd > 0 ? `${player.eCd.toFixed(1)}s` : player.hero.eLabel;
+            document.getElementById('lbl-r').innerText = player.rCd > 0 ? `${player.rCd.toFixed(1)}s` : player.hero.rLabel;
+            document.getElementById('lbl-dash').innerText = player.dashCd > 0 ? `${player.dashCd.toFixed(1)}s` : 'Listo';
+
+            const btnF = document.getElementById('btn-f');
+            const lblF = document.getElementById('lbl-f');
+            if (player.resonance >= 100) {
+                lblF.innerText = '¡LISTO!';
+                btnF.classList.add('domain-ready-btn');
+            } else {
+                lblF.innerText = `${Math.floor(player.resonance)}%`;
+                btnF.classList.remove('domain-ready-btn');
+            }
+        }
+
+        function switchHero(heroId) {
+            const h = HEROES[heroId];
+            if (!h) return;
+            if (heroId === 'gojo' && !state.gojoUnlocked) {
+                showToast('🔒 Derrota a Jogo y Mahito en el Bosque para desbloquear a Satoru Gojo.');
+                return;
+            }
+            const g = SORCERER_GRADES[player.gradeIdx];
+            player.hero = h;
+            player.maxHp = Math.floor(h.maxHp * g.hpMult);
+            player.hp = player.maxHp;
+            player.maxCe = Math.floor(h.maxCe * g.ceMult);
+            player.ce = player.maxCe;
+
+            document.getElementById('hud-avatar').innerText = h.short;
+            document.getElementById('hud-char-name').innerText = h.name;
+            closeRosterModal();
+            showToast(`⚡ EQUIPO ACTIVO: ${h.name}`);
+        }
+
+        function openRosterModal() {
+            const inSafeCampus = player.x < 15 * TILE && !state.activeBossRift;
+            const gridEl = document.getElementById('roster-grid');
+            gridEl.innerHTML = '';
+
+            Object.values(HEROES).forEach(h => {
+                const locked = h.id === 'gojo' && !state.gojoUnlocked;
+                const isCurrent = player.hero.id === h.id;
+                const card = document.createElement('div');
+                card.className = `snes-box p-2.5 flex flex-col justify-between ${isCurrent ? 'border-amber-400' : ''} ${locked ? 'opacity-65' : ''}`;
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-pixel text-[8px] text-cyan-300">${h.role}</span>
+                            <span class="font-pixel text-[8px] text-amber-300">${isCurrent ? 'ACTIVO' : ''}</span>
+                        </div>
+                        <h4 class="font-pixel text-[11px] text-white mb-1">${h.name}</h4>
+                        <p class="text-sm text-slate-300 leading-tight mb-2">${h.desc}</p>
+                    </div>
+                    <button ${(!inSafeCampus && !isCurrent) ? 'disabled' : ''} onclick="switchHero('${h.id}')" class="snes-btn w-full py-1.5 font-pixel text-[8px] ${locked ? 'text-rose-400' : 'text-amber-300'} rounded cursor-pointer disabled:opacity-40">
+                        ${locked ? '🔒 BLOQUEADO' : (isCurrent ? '✓ SELECCIONADO' : (inSafeCampus ? 'ELEGIR HECHICERO' : 'VUELVE AL CAMPUS'))}
+                    </button>
+                `;
+                gridEl.appendChild(card);
+            });
+
+            document.getElementById('roster-modal').classList.remove('hidden');
+            state.paused = true;
+        }
+
+        function closeRosterModal() {
+            document.getElementById('roster-modal').classList.add('hidden');
+            state.paused = false;
+        }
+
+        function toggleGuideModal() {
+            const m = document.getElementById('guide-modal');
+            m.classList.toggle('hidden');
+            if (state.running) state.paused = !m.classList.contains('hidden');
+        }
+
+        function toggleTouchControls() {
+            state.touchVisible = !state.touchVisible;
+            const layer = document.getElementById('touch-ui-layer');
+            const btn = document.getElementById('btn-toggle-touch');
+            if (state.touchVisible) {
+                layer.classList.remove('hidden');
+                btn.innerText = '📱 TÁCTIL: ON';
+            } else {
+                layer.classList.add('hidden');
+                btn.innerText = '📱 TÁCTIL: OFF';
+            }
+        }
+
+        function startGame(heroId) {
+            buildWorldMap();
+            document.getElementById('screen-start').classList.add('hidden');
+            document.getElementById('top-hud').classList.remove('hidden');
+            document.getElementById('radar-box').classList.remove('hidden');
+            document.getElementById('touch-ui-layer').classList.remove('hidden');
+            state.running = true;
+            state.paused = false;
+            switchHero(heroId);
+            showToast('Acércate a Gojo o al Pedestal para interactuar • Cruza el puente al Bosque');
+        }
+
+        let lastFrame = performance.now();
+        function gameLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrame) / 1000);
+            lastFrame = now;
+            update(dt);
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function () {
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
